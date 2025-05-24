@@ -1,5 +1,5 @@
 (library
  (public_name claude-code-2025-05)
  (name lan_rogue)
- (libraries core async async_rpc_kernel)
+ (libraries core async async_rpc_kernel notty notty_async)
  (preprocess (pps ppx_jane)))

@@ -1,5 +1,4 @@
 open! Core
-open! Async
 
 type position = { x : int; y : int } [@@deriving sexp, bin_io]
 

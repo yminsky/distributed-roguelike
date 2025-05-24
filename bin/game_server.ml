@@ -1,3 +1,1 @@
-open Core
-
-let () = printf "Game server placeholder\n"
+let () = Command_unix.run Lan_rogue.Server.command
