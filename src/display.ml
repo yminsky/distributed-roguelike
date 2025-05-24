@@ -26,14 +26,15 @@ let render_grid (world_view : World_view.t) =
     for col = 0 to view_width - 1 do
       let world_x = cx - half_width + col in
       let world_pos = Protocol.Position.{ x = world_x; y = world_y } in
+      let render_empty_cell world_x world_y =
+        if world_x mod 10 = 0 || world_y mod 10 = 0
+        then '.', Notty.A.(fg lightblack) (* Grid markers every 10 units *)
+        else ' ', Notty.A.empty
+      in
       let ch, color =
         match List.Assoc.find player_map world_pos ~equal:Protocol.Position.equal with
         | Some player -> player.sigil, Notty.A.(fg lightgreen)
-        | None ->
-          if world_x mod 10 = 0 || world_y mod 10 = 0
-          then '.', Notty.A.(fg lightblack) (* Grid markers every 10 units *)
-          else ' ', Notty.A.empty
-        (* Empty space *)
+        | None -> render_empty_cell world_x world_y
       in
       line_images := Notty.I.(string color (String.of_char ch)) :: !line_images
     done;
