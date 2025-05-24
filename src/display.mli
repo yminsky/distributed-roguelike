@@ -1,11 +1,13 @@
 open! Core
 
-type world_view = {
-  player_pos : Protocol.position;
-  view_width : int;
-  view_height : int;
-}
+module World_view : sig
+  type t = {
+    player_pos : Protocol.Position.t;
+    view_width : int;
+    view_height : int;
+  }
+end
 
-val render_grid : world_view -> Notty.image
+val render_grid : World_view.t -> Notty.image
 
-val render_ui : world_view -> Notty.image
+val render_ui : World_view.t -> Notty.image

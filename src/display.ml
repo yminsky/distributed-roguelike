@@ -1,13 +1,15 @@
 open! Core
 
-type world_view = {
-  player_pos : Protocol.position;
-  view_width : int;
-  view_height : int;
-}
+module World_view = struct
+  type t = {
+    player_pos : Protocol.Position.t;
+    view_width : int;
+    view_height : int;
+  }
+end
 
-let render_grid world_view =
-  let { player_pos = { x = px; y = py }; view_width; view_height } = world_view in
+let render_grid (world_view : World_view.t) =
+  let { World_view.player_pos = { x = px; y = py }; view_width; view_height } = world_view in
   let half_width = view_width / 2 in
   let half_height = view_height / 2 in
   
@@ -43,8 +45,8 @@ let render_grid world_view =
   
   Notty.I.(vcat (List.rev !images))
 
-let render_ui world_view =
+let render_ui (world_view : World_view.t) =
   let grid = render_grid world_view in
-  let { player_pos = { x; y }; _ } = world_view in
+  let { World_view.player_pos = { x; y }; _ } = world_view in
   let status = Notty.I.(string Notty.A.(fg white) (sprintf "Position: (%d, %d) | Use WASD to move, Q to quit" x y)) in
   Notty.I.(grid <-> Notty.I.(string Notty.A.empty "") <-> status)

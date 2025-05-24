@@ -1,14 +1,20 @@
 open! Core
 
-type position = { x : int; y : int } [@@deriving sexp, bin_io]
+module Position = struct
+  type t = { x : int; y : int } [@@deriving sexp, bin_io]
+end
 
-type player_id = string [@@deriving sexp, bin_io, compare]
+module Player_id = struct
+  type t = string [@@deriving sexp, bin_io, compare]
+end
 
-type player = {
-  id : player_id;
-  position : position;
-  name : string;
-} [@@deriving sexp, bin_io]
+module Player = struct
+  type t = {
+    id : Player_id.t;
+    position : Position.t;
+    name : string;
+  } [@@deriving sexp, bin_io]
+end
 
 module Request = struct
   type t =
@@ -20,16 +26,16 @@ end
 
 module Update = struct
   type t =
-    | Player_joined of player
-    | Player_moved of { player_id : player_id; new_position : position }
-    | Player_left of player_id
+    | Player_joined of Player.t
+    | Player_moved of { player_id : Player_id.t; new_position : Position.t }
+    | Player_left of Player_id.t
   [@@deriving sexp, bin_io]
 end
 
 module Initial_state = struct
   type t = {
-    your_id : player_id;
-    all_players : player list;
+    your_id : Player_id.t;
+    all_players : Player.t list;
   }
   [@@deriving sexp, bin_io]
 end
