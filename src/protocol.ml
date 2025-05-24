@@ -1,4 +1,5 @@
 open! Core
+open Async
 
 module Position = struct
   type t =
@@ -107,7 +108,7 @@ end
 
 module Rpc_calls = struct
   let send_request =
-    Async_rpc_kernel.Rpc.Rpc.create
+    Rpc.Rpc.create
       ~name:"game_request"
       ~version:1
       ~bin_query:Request.bin_t
@@ -116,7 +117,7 @@ module Rpc_calls = struct
   ;;
 
   let get_game_state =
-    Async_rpc_kernel.Rpc.State_rpc.create
+    Rpc.State_rpc.create
       ~name:"game_state"
       ~version:1
       ~bin_query:Unit.bin_t

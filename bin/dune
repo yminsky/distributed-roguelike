@@ -1,6 +1,6 @@
 (executables
  (public_names game_server game_client)
  (names game_server game_client)
- (libraries lan_rogue core async async_rpc_kernel notty notty_async)
+ (libraries lan_rogue core async notty notty_async)
  (preprocess
   (pps ppx_jane)))
