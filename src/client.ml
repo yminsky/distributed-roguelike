@@ -9,18 +9,20 @@ let handle_input player_pos_ref term =
     | `Ok event ->
       (match event with
        | `Key (key, []) ->
-         let key_input = Protocol.Key_input.of_notty_key key in
-         (match Game_state.key_to_action key_input with
-          | Some direction ->
-            let new_pos =
-              Protocol.Direction.apply_to_position direction !player_pos_ref
-            in
-            player_pos_ref := new_pos;
-            return `Continue
-          | None ->
-            (match key with
-             | `ASCII ('q' | 'Q') -> return `Quit
-             | _ -> loop ()))
+         (match Protocol.Key_input.of_notty_key key with
+          | Some key_input ->
+            (match Game_state.key_to_action key_input with
+             | Some direction ->
+               let new_pos =
+                 Protocol.Direction.apply_to_position direction !player_pos_ref
+               in
+               player_pos_ref := new_pos;
+               return `Continue
+             | None ->
+               (match key with
+                | `ASCII ('q' | 'Q') -> return `Quit
+                | _ -> loop ()))
+          | None -> loop () (* ignore unmappable keys *))
        | _ -> loop ())
   in
   loop ()

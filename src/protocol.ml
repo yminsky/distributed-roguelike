@@ -43,12 +43,12 @@ module Key_input = struct
   [@@deriving sexp, bin_io, compare]
 
   let of_notty_key = function
-    | `ASCII c -> ASCII c
-    | `Arrow `Up -> Arrow Up
-    | `Arrow `Down -> Arrow Down
-    | `Arrow `Left -> Arrow Left
-    | `Arrow `Right -> Arrow Right
-    | _ -> ASCII '\000' (* unmappable key *)
+    | `ASCII c -> Some (ASCII c)
+    | `Arrow `Up -> Some (Arrow Up)
+    | `Arrow `Down -> Some (Arrow Down)
+    | `Arrow `Left -> Some (Arrow Left)
+    | `Arrow `Right -> Some (Arrow Right)
+    | _ -> None
   ;;
 
   let to_string = function
