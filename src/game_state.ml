@@ -36,6 +36,10 @@ let key_to_action = function
   | `ASCII 's' | `ASCII 'S' -> Some (Action.Move `Down)
   | `ASCII 'a' | `ASCII 'A' -> Some (Action.Move `Left)
   | `ASCII 'd' | `ASCII 'D' -> Some (Action.Move `Right)
+  | `Arrow `Up -> Some (Action.Move `Up)
+  | `Arrow `Down -> Some (Action.Move `Down)
+  | `Arrow `Left -> Some (Action.Move `Left)
+  | `Arrow `Right -> Some (Action.Move `Right)
   | `ASCII 'q' | `ASCII 'Q' -> Some Action.Quit
   | _ -> None
 ;;

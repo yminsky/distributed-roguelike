@@ -8,23 +8,18 @@ let handle_input player_pos_ref term =
     | `Eof -> return `Quit
     | `Ok event ->
       (match event with
-       | `Key (`ASCII 'q', []) | `Key (`ASCII 'Q', []) -> return `Quit
-       | `Key (`ASCII 'w', []) | `Key (`ASCII 'W', []) ->
-         (player_pos_ref
-          := Protocol.Position.{ !player_pos_ref with y = !player_pos_ref.y - 1 });
-         return `Continue
-       | `Key (`ASCII 's', []) | `Key (`ASCII 'S', []) ->
-         (player_pos_ref
-          := Protocol.Position.{ !player_pos_ref with y = !player_pos_ref.y + 1 });
-         return `Continue
-       | `Key (`ASCII 'a', []) | `Key (`ASCII 'A', []) ->
-         (player_pos_ref
-          := Protocol.Position.{ !player_pos_ref with x = !player_pos_ref.x - 1 });
-         return `Continue
-       | `Key (`ASCII 'd', []) | `Key (`ASCII 'D', []) ->
-         (player_pos_ref
-          := Protocol.Position.{ !player_pos_ref with x = !player_pos_ref.x + 1 });
-         return `Continue
+       | `Key (key, []) ->
+         (match Game_state.key_to_action key with
+          | Some Game_state.Action.Quit -> return `Quit
+          | Some (Game_state.Action.Move direction) ->
+            let new_pos =
+              Game_state.Local_state.move_player
+                { player_pos = !player_pos_ref }
+                direction
+            in
+            player_pos_ref := new_pos.player_pos;
+            return `Continue
+          | None -> loop ())
        | _ -> loop ())
   in
   loop ()

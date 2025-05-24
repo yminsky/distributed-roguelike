@@ -27,18 +27,43 @@ let%expect_test "game state creation and movement" =
 ;;
 
 let%expect_test "key to action conversion" =
-  let test_key key _expected =
+  let test_key key =
     match Game_state.key_to_action (`ASCII key) with
     | Some action ->
       printf "%c -> %s\n" key (Sexp.to_string_hum (Game_state.Action.sexp_of_t action))
     | None -> printf "%c -> None\n" key
   in
-  test_key 'w' (Some (Game_state.Action.Move `Up));
-  test_key 'd' (Some (Game_state.Action.Move `Right));
-  test_key 's' (Some (Game_state.Action.Move `Down));
-  test_key 'a' (Some (Game_state.Action.Move `Left));
-  test_key 'q' (Some Game_state.Action.Quit);
-  test_key 'x' None;
+  test_key 'w';
+  test_key 'd';
+  test_key 's';
+  test_key 'a';
+  test_key 'q';
+  test_key 'x';
+  (* Test arrow keys *)
+  let test_arrow arrow =
+    match Game_state.key_to_action (`Arrow arrow) with
+    | Some action ->
+      printf
+        "Arrow %s -> %s\n"
+        (match arrow with
+         | `Up -> "Up"
+         | `Down -> "Down"
+         | `Left -> "Left"
+         | `Right -> "Right")
+        (Sexp.to_string_hum (Game_state.Action.sexp_of_t action))
+    | None ->
+      printf
+        "Arrow %s -> None\n"
+        (match arrow with
+         | `Up -> "Up"
+         | `Down -> "Down"
+         | `Left -> "Left"
+         | `Right -> "Right")
+  in
+  test_arrow `Up;
+  test_arrow `Down;
+  test_arrow `Left;
+  test_arrow `Right;
   [%expect
     {|
     w -> (Move Up)
@@ -46,7 +71,12 @@ let%expect_test "key to action conversion" =
     s -> (Move Down)
     a -> (Move Left)
     q -> Quit
-    x -> None |}]
+    x -> None
+    Arrow Up -> (Move Up)
+    Arrow Down -> (Move Down)
+    Arrow Left -> (Move Left)
+    Arrow Right -> (Move Right)
+    |}]
 ;;
 
 let%expect_test "visual state transitions" =

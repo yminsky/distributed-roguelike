@@ -15,7 +15,10 @@ module Action : sig
 end
 
 val apply_action : Local_state.t -> Action.t -> Local_state.t
-val key_to_action : [> `ASCII of char ] -> Action.t option
+
+val key_to_action
+  :  [> `ASCII of char | `Arrow of [ `Up | `Down | `Left | `Right ] ]
+  -> Action.t option
 
 val to_world_view
   :  Local_state.t
