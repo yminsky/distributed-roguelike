@@ -10,16 +10,19 @@ let handle_input player_pos_ref term =
       (match event with
        | `Key (key, []) ->
          (match Game_state.key_to_action key with
-          | Some Game_state.Action.Quit -> return `Quit
-          | Some (Game_state.Action.Move direction) ->
-            let new_pos =
-              Game_state.Local_state.move_player
-                { player_pos = !player_pos_ref }
-                direction
+          | Some direction ->
+            let new_pos = match direction with
+              | `Up -> Protocol.Position.{ x = !player_pos_ref.x; y = !player_pos_ref.y - 1 }
+              | `Down -> Protocol.Position.{ x = !player_pos_ref.x; y = !player_pos_ref.y + 1 }
+              | `Left -> Protocol.Position.{ x = !player_pos_ref.x - 1; y = !player_pos_ref.y }
+              | `Right -> Protocol.Position.{ x = !player_pos_ref.x + 1; y = !player_pos_ref.y }
             in
-            player_pos_ref := new_pos.player_pos;
+            player_pos_ref := new_pos;
             return `Continue
-          | None -> loop ())
+          | None -> 
+            (match key with
+             | `ASCII ('q' | 'Q') -> return `Quit
+             | _ -> loop ()))
        | _ -> loop ())
   in
   loop ()

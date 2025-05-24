@@ -2,10 +2,10 @@ open! Core
 open Lan_rogue
 
 let%expect_test "multi-player state management" =
-  let state = Multiplayer_state.Multi_state.create () in
+  let state = Game_state.create () in
   
   (* Add first player *)
-  let result1 = Multiplayer_state.Multi_state.add_player state ~player_id:"alice" ~player_name:"Alice" in
+  let result1 = Game_state.add_player state ~player_id:"alice" ~player_name:"Alice" in
   (match result1 with
   | Ok (_state, player) -> 
     printf "Added player: %s at (%d, %d) with sigil '%c'\n" 
@@ -15,7 +15,7 @@ let%expect_test "multi-player state management" =
   let state = match result1 with Ok (s, _) -> s | Error _ -> state in
   
   (* Add second player *)
-  let result2 = Multiplayer_state.Multi_state.add_player state ~player_id:"bob" ~player_name:"Bob" in
+  let result2 = Game_state.add_player state ~player_id:"bob" ~player_name:"Bob" in
   (match result2 with
   | Ok (_state, player) -> 
     printf "Added player: %s at (%d, %d) with sigil '%c'\n" 
@@ -28,39 +28,39 @@ let%expect_test "multi-player state management" =
     |}]
 
 let%expect_test "collision detection" =
-  let state = Multiplayer_state.Multi_state.create () in
+  let state = Game_state.create () in
   
   (* Add two players *)
-  let (state, alice) = (match Multiplayer_state.Multi_state.add_player state ~player_id:"alice" ~player_name:"Alice" with
+  let (state, alice) = (match Game_state.add_player state ~player_id:"alice" ~player_name:"Alice" with
     | Ok result -> result | Error _ -> failwith "Failed to add Alice") in
-  let (state, bob) = (match Multiplayer_state.Multi_state.add_player state ~player_id:"bob" ~player_name:"Bob" with
+  let (state, bob) = (match Game_state.add_player state ~player_id:"bob" ~player_name:"Bob" with
     | Ok result -> result | Error _ -> failwith "Failed to add Bob") in
   
   printf "Alice at (%d, %d), Bob at (%d, %d)\n" 
     alice.position.x alice.position.y bob.position.x bob.position.y;
   
   (* Move Bob to be adjacent to Alice (right of Alice) *)
-  let state = (match Multiplayer_state.Multi_state.move_player state ~player_id:"bob" ~direction:`Left with
+  let state = (match Game_state.move_player state ~player_id:"bob" ~direction:`Left with
     | Ok s -> s | Error _ -> failwith "Failed to move Bob left") in
   
-  let bob = Multiplayer_state.Multi_state.get_player state ~player_id:"bob" |> Option.value_exn in
+  let bob = Game_state.get_player state ~player_id:"bob" |> Option.value_exn in
   printf "Bob now at (%d, %d)\n" bob.position.x bob.position.y;
   
   (* Check Alice's current position *)
-  let alice = Multiplayer_state.Multi_state.get_player state ~player_id:"alice" |> Option.value_exn in
+  let alice = Game_state.get_player state ~player_id:"alice" |> Option.value_exn in
   printf "Alice is at (%d, %d)\n" alice.position.x alice.position.y;
   
   (* Try to move Bob into Alice's position (should fail) *)
-  let result = Multiplayer_state.Multi_state.move_player state ~player_id:"bob" ~direction:`Left in
+  let result = Game_state.move_player state ~player_id:"bob" ~direction:`Left in
   (match result with
   | Ok _ -> printf "Move succeeded (unexpected)\n"
   | Error msg -> printf "Move blocked: %s\n" msg);
   
   (* Move Bob in a different direction (should work) *)
-  let result = Multiplayer_state.Multi_state.move_player state ~player_id:"bob" ~direction:`Down in
+  let result = Game_state.move_player state ~player_id:"bob" ~direction:`Down in
   (match result with
   | Ok new_state -> 
-    let bob = Multiplayer_state.Multi_state.get_player new_state ~player_id:"bob" in
+    let bob = Game_state.get_player new_state ~player_id:"bob" in
     (match bob with
     | Some player -> printf "Bob moved to (%d, %d)\n" player.position.x player.position.y
     | None -> printf "Bob not found\n")
@@ -75,26 +75,26 @@ let%expect_test "collision detection" =
     |}]
 
 let%expect_test "visual multi-player rendering" =
-  let state = Multiplayer_state.Multi_state.create () in
+  let state = Game_state.create () in
   
   (* Add three players *)
-  let (state, _) = (match Multiplayer_state.Multi_state.add_player state ~player_id:"alice" ~player_name:"Alice" with
+  let (state, _) = (match Game_state.add_player state ~player_id:"alice" ~player_name:"Alice" with
     | Ok result -> result | Error _ -> failwith "Failed to add Alice") in
-  let (state, _) = (match Multiplayer_state.Multi_state.add_player state ~player_id:"bob" ~player_name:"Bob" with
+  let (state, _) = (match Game_state.add_player state ~player_id:"bob" ~player_name:"Bob" with
     | Ok result -> result | Error _ -> failwith "Failed to add Bob") in
-  let (state, _) = (match Multiplayer_state.Multi_state.add_player state ~player_id:"charlie" ~player_name:"Charlie" with
+  let (state, _) = (match Game_state.add_player state ~player_id:"charlie" ~player_name:"Charlie" with
     | Ok result -> result | Error _ -> failwith "Failed to add Charlie") in
   
   (* Move players to specific positions *)
-  let state = (match Multiplayer_state.Multi_state.move_player state ~player_id:"bob" ~direction:`Right with
+  let state = (match Game_state.move_player state ~player_id:"bob" ~direction:`Right with
     | Ok s -> s | Error _ -> failwith "Failed to move Bob right") in
-  let state = (match Multiplayer_state.Multi_state.move_player state ~player_id:"bob" ~direction:`Right with
+  let state = (match Game_state.move_player state ~player_id:"bob" ~direction:`Right with
     | Ok s -> s | Error _ -> failwith "Failed to move Bob right again") in
-  let state = (match Multiplayer_state.Multi_state.move_player state ~player_id:"charlie" ~direction:`Down with
+  let state = (match Game_state.move_player state ~player_id:"charlie" ~direction:`Down with
     | Ok s -> s | Error _ -> failwith "Failed to move Charlie down") in
   
   (* Render the world *)
-  let players = Multiplayer_state.Multi_state.get_players state in
+  let players = Game_state.get_players state in
   let world_view = Display.World_view.{
     players;
     center_pos = { x = 0; y = 0 };

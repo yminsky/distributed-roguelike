@@ -1,61 +1,103 @@
 open! Core
 
-module Local_state = struct
-  type t = { player_pos : Protocol.Position.t }
+type t = 
+  { players : (Protocol.Player_id.t, Protocol.Player.t) List.Assoc.t
+  ; max_players : int
+  }
 
-  let create () = { player_pos = { x = 0; y = 0 } }
+let create ?(max_players = 10) () = 
+  { players = []; max_players }
 
-  let move_player t direction =
-    let { Protocol.Position.x; y } = t.player_pos in
-    let new_pos =
-      match direction with
+let player_sigils = [| '@'; '#'; '$'; '%'; '&'; '*'; '+'; '='; '?'; '!' |]
+
+let next_available_sigil t =
+  let used_sigils = 
+    List.map t.players ~f:(fun (_, p) -> p.sigil)
+    |> Set.of_list (module Char)
+  in
+  Array.find player_sigils ~f:(fun sigil -> not (Set.mem used_sigils sigil))
+
+let find_spawn_position t =
+  let occupied_positions = List.map t.players ~f:(fun (_, p) -> p.position) in
+  
+  (* Try positions in a spiral around origin *)
+  let rec try_positions radius =
+    if radius > 20 then failwith "Cannot find spawn position"
+    else
+      let positions = ref [] in
+      for dx = -radius to radius do
+        for dy = -radius to radius do
+          if abs dx = radius || abs dy = radius then
+            positions := Protocol.Position.{ x = dx; y = dy } :: !positions
+        done
+      done;
+      
+      match List.find !positions ~f:(fun pos -> 
+        not (List.exists occupied_positions ~f:(Protocol.Position.equal pos))) with
+      | Some pos -> pos
+      | None -> try_positions (radius + 1)
+  in
+  try_positions 0
+
+let add_player t ~player_id ~player_name =
+  if List.length t.players >= t.max_players then
+    Error "Server full (max 10 players)"
+  else
+    match next_available_sigil t with
+    | None -> Error "No available sigils"
+    | Some sigil ->
+      let position = find_spawn_position t in
+      let player = Protocol.Player.{ 
+        id = player_id; 
+        position; 
+        name = player_name; 
+        sigil 
+      } in
+      let players = (player_id, player) :: (List.Assoc.remove t.players player_id ~equal:String.equal) in
+      Ok ({ t with players }, player)
+
+let remove_player t ~player_id =
+  { t with players = List.Assoc.remove t.players player_id ~equal:String.equal }
+
+let move_player t ~player_id ~direction =
+  match List.Assoc.find t.players player_id ~equal:String.equal with
+  | None -> Error "Player not found"
+  | Some player ->
+    let { Protocol.Position.x; y } = player.position in
+    let new_pos = match direction with
       | `Up -> Protocol.Position.{ x; y = y - 1 }
       | `Down -> Protocol.Position.{ x; y = y + 1 }
       | `Left -> Protocol.Position.{ x = x - 1; y }
       | `Right -> Protocol.Position.{ x = x + 1; y }
     in
-    { player_pos = new_pos }
-  ;;
-end
+    
+    (* Check for collisions with other players *)
+    let collision = 
+      List.exists t.players ~f:(fun (other_id, other_player) ->
+        not (String.equal other_id player_id) &&
+        Protocol.Position.equal other_player.position new_pos)
+    in
+    
+    if collision then
+      Error "Cannot move into another player"
+    else
+      let updated_player = { player with position = new_pos } in
+      let players = (player_id, updated_player) :: (List.Assoc.remove t.players player_id ~equal:String.equal) in
+      Ok { t with players }
 
-module Action = struct
-  type t =
-    | Move of [ `Up | `Down | `Left | `Right ]
-    | Quit
-  [@@deriving sexp]
-end
+let get_players t = List.map t.players ~f:(fun (_, player) -> player)
 
-let apply_action state action =
-  match action with
-  | Action.Move direction -> Local_state.move_player state direction
-  | Action.Quit -> state (* No state change for quit *)
-;;
+let get_player t ~player_id = List.Assoc.find t.players player_id ~equal:String.equal
 
+(* Key mapping for client controls *)
 let key_to_action = function
-  | `ASCII 'w' | `ASCII 'W' -> Some (Action.Move `Up)
-  | `ASCII 's' | `ASCII 'S' -> Some (Action.Move `Down)
-  | `ASCII 'a' | `ASCII 'A' -> Some (Action.Move `Left)
-  | `ASCII 'd' | `ASCII 'D' -> Some (Action.Move `Right)
-  | `Arrow `Up -> Some (Action.Move `Up)
-  | `Arrow `Down -> Some (Action.Move `Down)
-  | `Arrow `Left -> Some (Action.Move `Left)
-  | `Arrow `Right -> Some (Action.Move `Right)
-  | `ASCII 'q' | `ASCII 'Q' -> Some Action.Quit
+  | `ASCII 'w' | `ASCII 'W' -> Some (`Up)
+  | `ASCII 'a' | `ASCII 'A' -> Some (`Left)
+  | `ASCII 's' | `ASCII 'S' -> Some (`Down)
+  | `ASCII 'd' | `ASCII 'D' -> Some (`Right)
+  | `Arrow `Up -> Some (`Up)
+  | `Arrow `Down -> Some (`Down)
+  | `Arrow `Left -> Some (`Left)
+  | `Arrow `Right -> Some (`Right)
+  | `ASCII 'q' | `ASCII 'Q' -> None (* quit *)
   | _ -> None
-;;
-
-let to_world_view state ~view_width ~view_height =
-  (* Convert single player state to multi-player view for backwards compatibility *)
-  let players = [Protocol.Player.{
-    id = "local_player";
-    position = state.Local_state.player_pos;
-    name = "You";
-    sigil = '@';
-  }] in
-  Display.World_view.{
-    players;
-    center_pos = state.Local_state.player_pos;
-    view_width;
-    view_height;
-  }
-;;

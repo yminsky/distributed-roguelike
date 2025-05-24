@@ -1,27 +1,27 @@
 open! Core
 
-module Local_state : sig
-  type t = { player_pos : Protocol.Position.t }
+type t
 
-  val create : unit -> t
-  val move_player : t -> [ `Up | `Down | `Left | `Right ] -> t
-end
+val create : ?max_players:int -> unit -> t
 
-module Action : sig
-  type t =
-    | Move of [ `Up | `Down | `Left | `Right ]
-    | Quit
-  [@@deriving sexp]
-end
+val add_player 
+  : t 
+  -> player_id:Protocol.Player_id.t 
+  -> player_name:string 
+  -> (t * Protocol.Player.t, string) Result.t
 
-val apply_action : Local_state.t -> Action.t -> Local_state.t
+val remove_player : t -> player_id:Protocol.Player_id.t -> t
+
+val move_player 
+  : t 
+  -> player_id:Protocol.Player_id.t 
+  -> direction:[ `Up | `Down | `Left | `Right ] 
+  -> (t, string) Result.t
+
+val get_players : t -> Protocol.Player.t list
+
+val get_player : t -> player_id:Protocol.Player_id.t -> Protocol.Player.t option
 
 val key_to_action
-  :  [> `ASCII of char | `Arrow of [ `Up | `Down | `Left | `Right ] ]
-  -> Action.t option
-
-val to_world_view
-  :  Local_state.t
-  -> view_width:int
-  -> view_height:int
-  -> Display.World_view.t
+  : [> `ASCII of char | `Arrow of [ `Up | `Down | `Left | `Right ] ]
+  -> [ `Up | `Down | `Left | `Right ] option
