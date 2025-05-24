@@ -12,6 +12,7 @@ module World_view = struct
 end
 
 let render_grid (world_view : World_view.t) =
+  let open Notty in
   let { World_view.center_pos = { x = cx; y = cy }; view_width; view_height; players } =
     world_view
   in
@@ -23,17 +24,17 @@ let render_grid (world_view : World_view.t) =
   in
   let render_empty_cell world_x world_y =
     if world_x mod grid_marker_spacing = 0 || world_y mod grid_marker_spacing = 0
-    then '.', Notty.A.(fg lightblack) (* Grid markers *)
-    else ' ', Notty.A.empty
+    then '.', A.(fg lightblack) (* Grid markers *)
+    else ' ', A.empty
   in
   let render_cell world_x world_y =
     let world_pos = Protocol.Position.{ x = world_x; y = world_y } in
     let ch, color =
       match List.Assoc.find player_map world_pos ~equal:Protocol.Position.equal with
-      | Some player -> player.sigil, Notty.A.(fg lightgreen)
+      | Some player -> player.sigil, A.(fg lightgreen)
       | None -> render_empty_cell world_x world_y
     in
-    Notty.I.(string color (String.of_char ch))
+    I.(string color (String.of_char ch))
   in
   let render_row row =
     let world_y = cy - half_height + row in
@@ -43,26 +44,27 @@ let render_grid (world_view : World_view.t) =
         let world_x = cx - half_width + col in
         render_cell world_x world_y)
     in
-    Notty.I.(hcat line_images)
+    I.(hcat line_images)
   in
   let rows = List.range 0 view_height in
   let images = List.map rows ~f:render_row in
-  Notty.I.(vcat images)
+  I.(vcat images)
 ;;
 
 let render_ui (world_view : World_view.t) =
+  let open Notty in
   let grid = render_grid world_view in
   let { World_view.center_pos = { x; y }; players; _ } = world_view in
   let player_count = List.length players in
   let status =
-    Notty.I.(
+    I.(
       string
-        Notty.A.(fg white)
+        A.(fg white)
         (sprintf
            "Center: (%d, %d) | Players: %d | Use WASD to move, Q to quit"
            x
            y
            player_count))
   in
-  Notty.I.(grid <-> Notty.I.(string Notty.A.empty "") <-> status)
+  I.(grid <-> I.(string A.empty "") <-> status)
 ;;
