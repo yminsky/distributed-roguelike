@@ -5,7 +5,7 @@ module Position = struct
     { x : int
     ; y : int
     }
-  [@@deriving sexp, bin_io]
+  [@@deriving sexp, bin_io, compare, equal]
 end
 
 module Player_id = struct
@@ -17,6 +17,7 @@ module Player = struct
     { id : Player_id.t
     ; position : Position.t
     ; name : string
+    ; sigil : char
     }
   [@@deriving sexp, bin_io]
 end

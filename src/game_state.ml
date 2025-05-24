@@ -45,6 +45,17 @@ let key_to_action = function
 ;;
 
 let to_world_view state ~view_width ~view_height =
-  Display.World_view.
-    { player_pos = state.Local_state.player_pos; view_width; view_height }
+  (* Convert single player state to multi-player view for backwards compatibility *)
+  let players = [Protocol.Player.{
+    id = "local_player";
+    position = state.Local_state.player_pos;
+    name = "You";
+    sigil = '@';
+  }] in
+  Display.World_view.{
+    players;
+    center_pos = state.Local_state.player_pos;
+    view_width;
+    view_height;
+  }
 ;;

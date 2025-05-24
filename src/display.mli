@@ -2,7 +2,8 @@ open! Core
 
 module World_view : sig
   type t =
-    { player_pos : Protocol.Position.t
+    { players : Protocol.Player.t list
+    ; center_pos : Protocol.Position.t
     ; view_width : int
     ; view_height : int
     }
