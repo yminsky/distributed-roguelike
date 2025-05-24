@@ -108,6 +108,8 @@ let%expect_test "visual state transitions" =
     .         .         .
     .         .         .
 
+    Position: (0, 0) | Use WASD to move, Q to quit
+
     === After moving right twice ===
             .         .
             .         .
@@ -121,6 +123,8 @@ let%expect_test "visual state transitions" =
             .         .
             .         .
 
+    Position: (2, 0) | Use WASD to move, Q to quit
+
     === After moving down once ===
             .         .
             .         .
@@ -133,5 +137,7 @@ let%expect_test "visual state transitions" =
             .         .
             .         .
             .         .
+
+    Position: (2, 1) | Use WASD to move, Q to quit
     |}]
 ;;

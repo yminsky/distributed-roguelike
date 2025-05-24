@@ -1,22 +1,8 @@
 open! Core
 
 (* Convert a Notty image to a plain text string representation *)
-let render_to_string ?(width = 60) ?(height = 20) image =
-  let content = Format.asprintf "%a" (Notty.Render.pp Notty.Cap.dumb) image in
-  (* Clean up the output and ensure proper dimensions *)
-  let lines = String.split_lines content in
-  let padded_lines =
-    List.take lines height
-    |> List.mapi ~f:(fun i line ->
-      if i < List.length lines
-      then (
-        let len = String.length line in
-        if len >= width
-        then String.prefix line width
-        else line ^ String.make (width - len) ' ')
-      else String.make width ' ')
-  in
-  String.concat ~sep:"\n" padded_lines
+let render_to_string ?width:_ ?height:_ image =
+  Format.asprintf "%a" (Notty.Render.pp Notty.Cap.dumb) image
 ;;
 
 (* Convenience function for rendering game state *)
