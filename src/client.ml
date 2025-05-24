@@ -1,5 +1,5 @@
 open! Core
-open! Async
+open Async
 
 let handle_input player_pos_ref term =
   let rec loop () =
