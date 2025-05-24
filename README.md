@@ -53,3 +53,9 @@ dune exec ./game_server.exe
 # Connect clients (from other machines)
 dune exec ./game_client.exe -- --server <server-ip>
 ```
+
+## Build and Testing
+
+```bash
+dune build @default @runtest
+```

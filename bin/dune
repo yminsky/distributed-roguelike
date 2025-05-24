@@ -1,0 +1,5 @@
+(executables
+ (public_names game_server game_client)
+ (names game_server game_client)
+ (libraries lan_rogue core async async_rpc_kernel)
+ (preprocess (pps ppx_jane)))

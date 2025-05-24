@@ -1,0 +1,5 @@
+(library
+ (name lan_rogue_test)
+ (libraries lan_rogue core async async_rpc_kernel)
+ (inline_tests)
+ (preprocess (pps ppx_jane)))
