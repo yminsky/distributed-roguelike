@@ -19,12 +19,25 @@ module Request = struct
   [@@deriving sexp, bin_io]
 end
 
-module Response = struct
+module Update = struct
   type t =
-    | Welcome of { your_id : player_id; initial_state : player list }
     | Player_joined of player
     | Player_moved of { player_id : player_id; new_position : position }
     | Player_left of player_id
+  [@@deriving sexp, bin_io]
+end
+
+module Initial_state = struct
+  type t = {
+    your_id : player_id;
+    all_players : player list;
+  }
+  [@@deriving sexp, bin_io]
+end
+
+module Response = struct
+  type t =
+    | Ok
     | Error of string
   [@@deriving sexp, bin_io]
 end
@@ -37,11 +50,12 @@ module Rpc_calls = struct
       ~bin_query:Request.bin_t
       ~bin_response:Response.bin_t
 
-  let get_updates =
-    Async_rpc_kernel.Rpc.Pipe_rpc.create
-      ~name:"game_updates"
+  let get_game_state =
+    Async_rpc_kernel.Rpc.State_rpc.create
+      ~name:"game_state"
       ~version:1
       ~bin_query:Unit.bin_t
-      ~bin_response:Response.bin_t
+      ~bin_state:Initial_state.bin_t
+      ~bin_update:Update.bin_t
       ~bin_error:Error.bin_t
 end
