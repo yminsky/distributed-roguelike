@@ -2,6 +2,23 @@ open! Core
 open Async
 
 let handle_input player_pos_ref term =
+  let handle_movement_key direction =
+    let new_pos = Protocol.Direction.apply_to_position direction !player_pos_ref in
+    player_pos_ref := new_pos;
+    return `Continue
+  in
+  let handle_quit_key = function
+    | `ASCII ('q' | 'Q') -> return `Quit
+    | _ -> return `Continue
+  in
+  let handle_key key =
+    match Protocol.Key_input.of_notty_key key with
+    | Some key_input ->
+      (match Game_state.key_to_action key_input with
+       | Some direction -> handle_movement_key direction
+       | None -> handle_quit_key key)
+    | None -> return `Continue (* ignore unmappable keys *)
+  in
   let rec loop () =
     let%bind result = Notty_async.Term.events term |> Pipe.read in
     match result with
@@ -9,20 +26,10 @@ let handle_input player_pos_ref term =
     | `Ok event ->
       (match event with
        | `Key (key, []) ->
-         (match Protocol.Key_input.of_notty_key key with
-          | Some key_input ->
-            (match Game_state.key_to_action key_input with
-             | Some direction ->
-               let new_pos =
-                 Protocol.Direction.apply_to_position direction !player_pos_ref
-               in
-               player_pos_ref := new_pos;
-               return `Continue
-             | None ->
-               (match key with
-                | `ASCII ('q' | 'Q') -> return `Quit
-                | _ -> loop ()))
-          | None -> loop () (* ignore unmappable keys *))
+         let%bind action = handle_key key in
+         (match action with
+          | `Continue -> loop ()
+          | `Quit -> return `Quit)
        | _ -> loop ())
   in
   loop ()
