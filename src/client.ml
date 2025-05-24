@@ -12,10 +12,12 @@ let handle_input player_pos_ref term =
          let key_input = Protocol.Key_input.of_notty_key key in
          (match Game_state.key_to_action key_input with
           | Some direction ->
-            let new_pos = Protocol.Direction.apply_to_position direction !player_pos_ref in
+            let new_pos =
+              Protocol.Direction.apply_to_position direction !player_pos_ref
+            in
             player_pos_ref := new_pos;
             return `Continue
-          | None -> 
+          | None ->
             (match key with
              | `ASCII ('q' | 'Q') -> return `Quit
              | _ -> loop ()))
@@ -29,17 +31,15 @@ let main_loop () =
   let%bind term = Notty_async.Term.create () in
   let rec render_loop () =
     let world_view =
-      Display.World_view.{ 
-        players = [Protocol.Player.{
-          id = "local_player";
-          position = !player_pos;
-          name = "You";
-          sigil = '@';
-        }];
-        center_pos = !player_pos;
-        view_width = 60;
-        view_height = 20;
-      }
+      Display.World_view.
+        { players =
+            [ Protocol.Player.
+                { id = "local_player"; position = !player_pos; name = "You"; sigil = '@' }
+            ]
+        ; center_pos = !player_pos
+        ; view_width = 60
+        ; view_height = 20
+        }
     in
     let ui = Display.render_ui world_view in
     let%bind () = Notty_async.Term.image term ui in

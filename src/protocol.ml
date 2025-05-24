@@ -9,7 +9,11 @@ module Position = struct
 end
 
 module Direction = struct
-  type t = Up | Down | Left | Right
+  type t =
+    | Up
+    | Down
+    | Left
+    | Right
   [@@deriving sexp, bin_io, compare, equal]
 
   let to_string = function
@@ -17,20 +21,23 @@ module Direction = struct
     | Down -> "Down"
     | Left -> "Left"
     | Right -> "Right"
+  ;;
 
   let to_delta = function
-    | Up -> (0, -1)
-    | Down -> (0, 1)
-    | Left -> (-1, 0)
-    | Right -> (1, 0)
+    | Up -> 0, -1
+    | Down -> 0, 1
+    | Left -> -1, 0
+    | Right -> 1, 0
+  ;;
 
   let apply_to_position t pos =
     let dx, dy = to_delta t in
     Position.{ x = pos.x + dx; y = pos.y + dy }
+  ;;
 end
 
 module Key_input = struct
-  type t = 
+  type t =
     | ASCII of char
     | Arrow of Direction.t
   [@@deriving sexp, bin_io, compare]
@@ -42,10 +49,12 @@ module Key_input = struct
     | `Arrow `Left -> Arrow Left
     | `Arrow `Right -> Arrow Right
     | _ -> ASCII '\000' (* unmappable key *)
+  ;;
 
   let to_string = function
     | ASCII c -> Printf.sprintf "ASCII '%c'" c
     | Arrow dir -> Printf.sprintf "Arrow %s" (Direction.to_string dir)
+  ;;
 end
 
 module Player_id = struct
