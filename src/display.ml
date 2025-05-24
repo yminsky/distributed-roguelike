@@ -21,28 +21,33 @@ let render_grid (world_view : World_view.t) =
   let player_map =
     List.fold players ~init:[] ~f:(fun acc player -> (player.position, player) :: acc)
   in
-  let images = ref [] in
-  for row = 0 to view_height - 1 do
+  let render_empty_cell world_x world_y =
+    if world_x mod grid_marker_spacing = 0 || world_y mod grid_marker_spacing = 0
+    then '.', Notty.A.(fg lightblack) (* Grid markers *)
+    else ' ', Notty.A.empty
+  in
+  let render_cell world_x world_y =
+    let world_pos = Protocol.Position.{ x = world_x; y = world_y } in
+    let ch, color =
+      match List.Assoc.find player_map world_pos ~equal:Protocol.Position.equal with
+      | Some player -> player.sigil, Notty.A.(fg lightgreen)
+      | None -> render_empty_cell world_x world_y
+    in
+    Notty.I.(string color (String.of_char ch))
+  in
+  let render_row row =
     let world_y = cy - half_height + row in
-    let line_images = ref [] in
-    for col = 0 to view_width - 1 do
-      let world_x = cx - half_width + col in
-      let world_pos = Protocol.Position.{ x = world_x; y = world_y } in
-      let render_empty_cell world_x world_y =
-        if world_x mod grid_marker_spacing = 0 || world_y mod grid_marker_spacing = 0
-        then '.', Notty.A.(fg lightblack) (* Grid markers *)
-        else ' ', Notty.A.empty
-      in
-      let ch, color =
-        match List.Assoc.find player_map world_pos ~equal:Protocol.Position.equal with
-        | Some player -> player.sigil, Notty.A.(fg lightgreen)
-        | None -> render_empty_cell world_x world_y
-      in
-      line_images := Notty.I.(string color (String.of_char ch)) :: !line_images
-    done;
-    images := Notty.I.(hcat (List.rev !line_images)) :: !images
-  done;
-  Notty.I.(vcat (List.rev !images))
+    let cols = List.range 0 view_width in
+    let line_images =
+      List.map cols ~f:(fun col ->
+        let world_x = cx - half_width + col in
+        render_cell world_x world_y)
+    in
+    Notty.I.(hcat line_images)
+  in
+  let rows = List.range 0 view_height in
+  let images = List.map rows ~f:render_row in
+  Notty.I.(vcat images)
 ;;
 
 let render_ui (world_view : World_view.t) =
