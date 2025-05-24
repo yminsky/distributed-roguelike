@@ -1,14 +1,36 @@
 open! Core
 open Async
 
-let handle_input player_pos_ref term =
+let default_host = "127.0.0.1"
+let default_port = 8080
+
+type game_client =
+  { connection : Rpc.Connection.t
+  ; mutable your_id : Protocol.Player_id.t
+  ; mutable all_players : Protocol.Player.t list
+  ; term : Notty_async.Term.t
+  }
+
+let send_request client request =
+  Rpc.Rpc.dispatch Protocol.Rpc_calls.send_request client.connection request
+;;
+
+let handle_input client =
   let handle_movement_key direction =
-    let new_pos = Protocol.Direction.apply_to_position direction !player_pos_ref in
-    player_pos_ref := new_pos;
-    return `Continue
+    let%bind result = send_request client (Move { direction }) in
+    match result with
+    | Ok Ok -> return `Continue
+    | Ok (Error msg) ->
+      Stdio.eprintf "Movement failed: %s\n" msg;
+      return `Continue
+    | Error err ->
+      Stdio.eprintf "RPC error: %s\n" (Error.to_string_hum err);
+      return `Continue
   in
   let handle_quit_key = function
-    | `ASCII ('q' | 'Q') -> return `Quit
+    | `ASCII ('q' | 'Q') ->
+      let%bind _result = send_request client Leave in
+      return `Quit
     | _ -> return `Continue
   in
   let handle_key key =
@@ -20,7 +42,7 @@ let handle_input player_pos_ref term =
     | None -> return `Continue (* ignore unmappable keys *)
   in
   let rec loop () =
-    let%bind result = Notty_async.Term.events term |> Pipe.read in
+    let%bind result = Notty_async.Term.events client.term |> Pipe.read in
     match result with
     | `Eof -> return `Quit
     | `Ok event ->
@@ -35,37 +57,140 @@ let handle_input player_pos_ref term =
   loop ()
 ;;
 
-let main_loop () =
-  let player_pos = ref Protocol.Position.{ x = 0; y = 0 } in
-  let%bind term = Notty_async.Term.create () in
-  let rec render_loop () =
+let handle_state_updates client =
+  let%bind result =
+    Rpc.State_rpc.dispatch (Protocol.Rpc_calls.get_game_state ()) client.connection ()
+  in
+  let pipe, initial_state, _metadata =
+    match result with
+    | Ok (Ok (initial_state, pipe, metadata)) -> pipe, initial_state, metadata
+    | Ok (Error err) -> failwith ("State RPC failed: " ^ Error.to_string_hum err)
+    | Error err -> failwith ("State RPC dispatch failed: " ^ Error.to_string_hum err)
+  in
+  (* Initialize client state with the initial game state from server *)
+  client.your_id <- initial_state.your_id;
+  client.all_players <- initial_state.all_players;
+  let rec loop () =
+    let%bind result = Pipe.read pipe in
+    match result with
+    | `Eof -> return ()
+    | `Ok update ->
+      (match update with
+       | Player_joined player ->
+         client.all_players <- player :: client.all_players;
+         loop ()
+       | Player_moved { player_id; new_position } ->
+         client.all_players
+         <- List.map client.all_players ~f:(fun player ->
+              if Protocol.Player_id.equal player.id player_id
+              then { player with position = new_position }
+              else player);
+         loop ()
+       | Player_left player_id ->
+         client.all_players
+         <- List.filter client.all_players ~f:(fun player ->
+              not (Protocol.Player_id.equal player.id player_id));
+         loop ())
+  in
+  loop ()
+;;
+
+let render_loop client =
+  let rec loop () =
+    let your_player =
+      List.find client.all_players ~f:(fun player ->
+        Protocol.Player_id.equal player.id client.your_id)
+    in
+    let center_pos =
+      match your_player with
+      | Some player -> player.position
+      | None -> Protocol.Position.{ x = 0; y = 0 }
+    in
     let world_view =
       Display.World_view.
-        { players =
-            [ Protocol.Player.
-                { id = "local_player"; position = !player_pos; name = "You"; sigil = '@' }
-            ]
-        ; center_pos = !player_pos
-        ; view_width = 60
-        ; view_height = 20
-        }
+        { players = client.all_players; center_pos; view_width = 60; view_height = 20 }
     in
     let ui = Display.render_ui world_view in
-    let%bind () = Notty_async.Term.image term ui in
+    let%bind () = Notty_async.Term.image client.term ui in
     let%bind () = after (Time_float.Span.of_ms 50.0) in
-    render_loop ()
+    loop ()
   in
-  let%bind () = Notty_async.Term.cursor term (Some (0, 0)) in
-  don't_wait_for (render_loop ());
-  let rec input_loop () =
-    let%bind result = handle_input player_pos term in
-    match result with
-    | `Quit -> return ()
-    | `Continue -> input_loop ()
+  loop ()
+;;
+
+let connect_to_server ~host ~port ~player_name =
+  let%bind _socket, reader, writer =
+    Tcp.connect (Tcp.Where_to_connect.of_host_and_port { host; port })
   in
-  input_loop ()
+  let%bind connection_result =
+    Rpc.Connection.create reader writer ~connection_state:(fun _ -> ())
+  in
+  let connection =
+    match connection_result with
+    | Ok connection -> connection
+    | Error exn -> failwith ("Failed to create RPC connection: " ^ Exn.to_string exn)
+  in
+  let%bind dummy_term = Notty_async.Term.create () in
+  let%bind result =
+    send_request
+      { connection; your_id = ""; all_players = []; term = dummy_term }
+      (Join { player_name })
+  in
+  match result with
+  | Error err -> failwith ("Join request failed: " ^ Error.to_string_hum err)
+  | Ok (Error msg) -> failwith ("Join rejected: " ^ msg)
+  | Ok Ok ->
+    let%bind state_result =
+      Rpc.State_rpc.dispatch (Protocol.Rpc_calls.get_game_state ()) connection ()
+    in
+    let pipe, initial_state =
+      match state_result with
+      | Ok (Ok (initial_state, pipe, _metadata)) -> pipe, initial_state
+      | Ok (Error err) -> failwith ("State RPC failed: " ^ Error.to_string_hum err)
+      | Error err -> failwith ("State RPC dispatch failed: " ^ Error.to_string_hum err)
+    in
+    let%bind term = Notty_async.Term.create () in
+    let client =
+      { connection
+      ; your_id = initial_state.your_id
+      ; all_players = initial_state.all_players
+      ; term
+      }
+    in
+    return (client, pipe)
+;;
+
+let main_loop ~host ~port ~player_name =
+  let%bind client, _update_pipe = connect_to_server ~host ~port ~player_name in
+  let%bind () = Notty_async.Term.cursor client.term (Some (0, 0)) in
+  don't_wait_for (render_loop client);
+  don't_wait_for (handle_state_updates client);
+  let%bind result = handle_input client in
+  match result with
+  | `Quit -> return ()
+  | `Continue -> return ()
 ;;
 
 let command =
-  Async.Command.async ~summary:"Game client" (Async.Command.Param.return main_loop)
+  let open Command.Let_syntax in
+  Command.async
+    ~summary:"Game client"
+    [%map_open
+      let host =
+        flag
+          "-host"
+          (optional_with_default default_host string)
+          ~doc:(Printf.sprintf "HOST Server host (default: %s)" default_host)
+      and port =
+        flag
+          "-port"
+          (optional_with_default default_port int)
+          ~doc:(Printf.sprintf "PORT Server port (default: %d)" default_port)
+      and player_name =
+        flag
+          "-name"
+          (optional_with_default "Player" string)
+          ~doc:"NAME Player name (default: Player)"
+      in
+      fun () -> main_loop ~host ~port ~player_name]
 ;;

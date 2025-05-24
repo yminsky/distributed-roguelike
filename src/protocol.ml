@@ -58,7 +58,7 @@ module Key_input = struct
 end
 
 module Player_id = struct
-  type t = string [@@deriving sexp, bin_io, compare]
+  type t = string [@@deriving sexp, bin_io, compare, equal]
 end
 
 module Player = struct
@@ -112,6 +112,7 @@ module Rpc_calls = struct
       ~version:1
       ~bin_query:Request.bin_t
       ~bin_response:Response.bin_t
+      ~include_in_error_count:Only_on_exn
   ;;
 
   let get_game_state =
