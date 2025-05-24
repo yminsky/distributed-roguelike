@@ -17,20 +17,22 @@ let next_available_sigil t =
 
 let find_spawn_position t =
   let occupied_positions = List.map t.players ~f:(fun (_, p) -> p.position) in
+  (* Generate positions in a spiral around origin *)
+  let positions_at_radius radius =
+    let range = List.range (-radius) (radius + 1) in
+    List.concat_map range ~f:(fun dx ->
+      List.filter_map range ~f:(fun dy ->
+        if abs dx = radius || abs dy = radius
+        then Some Protocol.Position.{ x = dx; y = dy }
+        else None))
+  in
   (* Try positions in a spiral around origin *)
   let rec try_positions radius =
     if radius > 20
     then failwith "Cannot find spawn position"
     else (
-      let positions = ref [] in
-      for dx = -radius to radius do
-        for dy = -radius to radius do
-          if abs dx = radius || abs dy = radius
-          then positions := Protocol.Position.{ x = dx; y = dy } :: !positions
-        done
-      done;
       match
-        List.find !positions ~f:(fun pos ->
+        List.find (positions_at_radius radius) ~f:(fun pos ->
           not (List.exists occupied_positions ~f:(Protocol.Position.equal pos)))
       with
       | Some pos -> pos

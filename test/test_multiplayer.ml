@@ -33,7 +33,7 @@ let%expect_test "multi-player state management" =
   [%expect
     {|
     Added player: Alice at (0, 0) with sigil '@'
-    Added player: Bob at (1, 1) with sigil '#'
+    Added player: Bob at (-1, -1) with sigil '#'
     |}]
 ;;
 
@@ -84,11 +84,11 @@ let%expect_test "collision detection" =
    | Error msg -> printf "Move failed: %s\n" msg);
   [%expect
     {|
-    Alice at (0, 0), Bob at (1, 1)
-    Bob now at (0, 1)
+    Alice at (0, 0), Bob at (-1, -1)
+    Bob now at (-2, -1)
     Alice is at (0, 0)
     Move succeeded (unexpected)
-    Bob moved to (0, 2)
+    Bob moved to (-2, 0)
     |}]
 ;;
 
@@ -139,9 +139,9 @@ let%expect_test "visual multi-player rendering" =
            .
            .
            .
-           .
+           .#
     .......@.......
-           .$ #
+          $.
            .
            .
            .
