@@ -1,5 +1,17 @@
 open! Core
 
+module Direction = struct
+  type t = Up | Down | Left | Right
+  [@@deriving sexp, bin_io, compare, equal]
+end
+
+module Key_input = struct
+  type t = 
+    | ASCII of char
+    | Arrow of Direction.t
+  [@@deriving sexp, bin_io, compare]
+end
+
 module Position = struct
   type t =
     { x : int
@@ -25,7 +37,7 @@ end
 module Request = struct
   type t =
     | Join of { player_name : string }
-    | Move of { direction : [ `Up | `Down | `Left | `Right ] }
+    | Move of { direction : Direction.t }
     | Leave
   [@@deriving sexp, bin_io]
 end

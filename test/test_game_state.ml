@@ -14,7 +14,7 @@ let%expect_test "game state creation and movement" =
           [ player.position.x; player.position.y ]));
   [%expect {| Initial state: (0 0) |}];
   let moved_right =
-    (match Game_state.move_player state ~player_id:"player1" ~direction:`Right with
+    (match Game_state.move_player state ~player_id:"player1" ~direction:Right with
     | Ok s -> s | Error _ -> failwith "Failed to move right")
   in
   let player_after_right = Game_state.get_player moved_right ~player_id:"player1" |> Option.value_exn in
@@ -23,7 +23,7 @@ let%expect_test "game state creation and movement" =
     (Sexp.to_string_hum
        (sexp_of_list sexp_of_int [ player_after_right.position.x; player_after_right.position.y ]));
   [%expect {| After moving right: (1 0) |}];
-  let moved_up = (match Game_state.move_player moved_right ~player_id:"player1" ~direction:`Up with
+  let moved_up = (match Game_state.move_player moved_right ~player_id:"player1" ~direction:Up with
     | Ok s -> s | Error _ -> failwith "Failed to move up") in
   let player_after_up = Game_state.get_player moved_up ~player_id:"player1" |> Option.value_exn in
   printf
@@ -35,13 +35,13 @@ let%expect_test "game state creation and movement" =
 
 let%expect_test "key to action conversion" =
   let test_key key =
-    match Game_state.key_to_action (`ASCII key) with
+    match Game_state.key_to_action (ASCII key) with
     | Some direction ->
       printf "%c -> %s\n" key (match direction with
-        | `Up -> "Up"
-        | `Down -> "Down" 
-        | `Left -> "Left"
-        | `Right -> "Right")
+        | Up -> "Up"
+        | Down -> "Down" 
+        | Left -> "Left"
+        | Right -> "Right")
     | None -> printf "%c -> None\n" key
   in
   test_key 'w';
@@ -52,33 +52,33 @@ let%expect_test "key to action conversion" =
   test_key 'x';
   (* Test arrow keys *)
   let test_arrow arrow =
-    match Game_state.key_to_action (`Arrow arrow) with
+    match Game_state.key_to_action (Arrow arrow) with
     | Some direction ->
       printf
         "Arrow %s -> %s\n"
         (match arrow with
-         | `Up -> "Up"
-         | `Down -> "Down"
-         | `Left -> "Left"
-         | `Right -> "Right")
+         | Up -> "Up"
+         | Down -> "Down"
+         | Left -> "Left"
+         | Right -> "Right")
         (match direction with
-         | `Up -> "Up"
-         | `Down -> "Down"
-         | `Left -> "Left"
-         | `Right -> "Right")
+         | Up -> "Up"
+         | Down -> "Down"
+         | Left -> "Left"
+         | Right -> "Right")
     | None ->
       printf
         "Arrow %s -> None\n"
         (match arrow with
-         | `Up -> "Up"
-         | `Down -> "Down"
-         | `Left -> "Left"
-         | `Right -> "Right")
+         | Up -> "Up"
+         | Down -> "Down"
+         | Left -> "Left"
+         | Right -> "Right")
   in
-  test_arrow `Up;
-  test_arrow `Down;
-  test_arrow `Left;
-  test_arrow `Right;
+  test_arrow Up;
+  test_arrow Down;
+  test_arrow Left;
+  test_arrow Right;
   [%expect
     {|
     w -> Up
@@ -104,13 +104,13 @@ let%expect_test "visual state transitions" =
     | Ok result -> result | Error _ -> failwith "Failed to add player") in
   print_endline (render_state state);
   printf "\n=== After moving right twice ===\n";
-  let state = (match Game_state.move_player state ~player_id:"player1" ~direction:`Right with
+  let state = (match Game_state.move_player state ~player_id:"player1" ~direction:Right with
     | Ok s -> s | Error _ -> failwith "Failed to move right") in
-  let state = (match Game_state.move_player state ~player_id:"player1" ~direction:`Right with
+  let state = (match Game_state.move_player state ~player_id:"player1" ~direction:Right with
     | Ok s -> s | Error _ -> failwith "Failed to move right") in
   print_endline (render_state state);
   printf "\n=== After moving down once ===\n";
-  let state = (match Game_state.move_player state ~player_id:"player1" ~direction:`Down with
+  let state = (match Game_state.move_player state ~player_id:"player1" ~direction:Down with
     | Ok s -> s | Error _ -> failwith "Failed to move down") in
   print_endline (render_state state);
   [%expect

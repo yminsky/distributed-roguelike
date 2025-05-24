@@ -40,7 +40,7 @@ let%expect_test "collision detection" =
     alice.position.x alice.position.y bob.position.x bob.position.y;
   
   (* Move Bob to be adjacent to Alice (right of Alice) *)
-  let state = (match Game_state.move_player state ~player_id:"bob" ~direction:`Left with
+  let state = (match Game_state.move_player state ~player_id:"bob" ~direction:Left with
     | Ok s -> s | Error _ -> failwith "Failed to move Bob left") in
   
   let bob = Game_state.get_player state ~player_id:"bob" |> Option.value_exn in
@@ -51,13 +51,13 @@ let%expect_test "collision detection" =
   printf "Alice is at (%d, %d)\n" alice.position.x alice.position.y;
   
   (* Try to move Bob into Alice's position (should fail) *)
-  let result = Game_state.move_player state ~player_id:"bob" ~direction:`Left in
+  let result = Game_state.move_player state ~player_id:"bob" ~direction:Left in
   (match result with
   | Ok _ -> printf "Move succeeded (unexpected)\n"
   | Error msg -> printf "Move blocked: %s\n" msg);
   
   (* Move Bob in a different direction (should work) *)
-  let result = Game_state.move_player state ~player_id:"bob" ~direction:`Down in
+  let result = Game_state.move_player state ~player_id:"bob" ~direction:Down in
   (match result with
   | Ok new_state -> 
     let bob = Game_state.get_player new_state ~player_id:"bob" in
@@ -86,11 +86,11 @@ let%expect_test "visual multi-player rendering" =
     | Ok result -> result | Error _ -> failwith "Failed to add Charlie") in
   
   (* Move players to specific positions *)
-  let state = (match Game_state.move_player state ~player_id:"bob" ~direction:`Right with
+  let state = (match Game_state.move_player state ~player_id:"bob" ~direction:Right with
     | Ok s -> s | Error _ -> failwith "Failed to move Bob right") in
-  let state = (match Game_state.move_player state ~player_id:"bob" ~direction:`Right with
+  let state = (match Game_state.move_player state ~player_id:"bob" ~direction:Right with
     | Ok s -> s | Error _ -> failwith "Failed to move Bob right again") in
-  let state = (match Game_state.move_player state ~player_id:"charlie" ~direction:`Down with
+  let state = (match Game_state.move_player state ~player_id:"charlie" ~direction:Down with
     | Ok s -> s | Error _ -> failwith "Failed to move Charlie down") in
   
   (* Render the world *)

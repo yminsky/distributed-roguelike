@@ -9,13 +9,21 @@ let handle_input player_pos_ref term =
     | `Ok event ->
       (match event with
        | `Key (key, []) ->
-         (match Game_state.key_to_action key with
+         let key_input = match key with
+           | `ASCII c -> Protocol.Key_input.ASCII c
+           | `Arrow `Up -> Protocol.Key_input.Arrow Up
+           | `Arrow `Down -> Protocol.Key_input.Arrow Down
+           | `Arrow `Left -> Protocol.Key_input.Arrow Left
+           | `Arrow `Right -> Protocol.Key_input.Arrow Right
+           | _ -> Protocol.Key_input.ASCII '\000' (* unmappable key *)
+         in
+         (match Game_state.key_to_action key_input with
           | Some direction ->
             let new_pos = match direction with
-              | `Up -> Protocol.Position.{ x = !player_pos_ref.x; y = !player_pos_ref.y - 1 }
-              | `Down -> Protocol.Position.{ x = !player_pos_ref.x; y = !player_pos_ref.y + 1 }
-              | `Left -> Protocol.Position.{ x = !player_pos_ref.x - 1; y = !player_pos_ref.y }
-              | `Right -> Protocol.Position.{ x = !player_pos_ref.x + 1; y = !player_pos_ref.y }
+              | Up -> Protocol.Position.{ x = !player_pos_ref.x; y = !player_pos_ref.y - 1 }
+              | Down -> Protocol.Position.{ x = !player_pos_ref.x; y = !player_pos_ref.y + 1 }
+              | Left -> Protocol.Position.{ x = !player_pos_ref.x - 1; y = !player_pos_ref.y }
+              | Right -> Protocol.Position.{ x = !player_pos_ref.x + 1; y = !player_pos_ref.y }
             in
             player_pos_ref := new_pos;
             return `Continue

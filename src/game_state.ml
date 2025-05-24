@@ -59,16 +59,16 @@ let add_player t ~player_id ~player_name =
 let remove_player t ~player_id =
   { t with players = List.Assoc.remove t.players player_id ~equal:String.equal }
 
-let move_player t ~player_id ~direction =
+let move_player t ~player_id ~(direction : Protocol.Direction.t) =
   match List.Assoc.find t.players player_id ~equal:String.equal with
   | None -> Error "Player not found"
   | Some player ->
     let { Protocol.Position.x; y } = player.position in
     let new_pos = match direction with
-      | `Up -> Protocol.Position.{ x; y = y - 1 }
-      | `Down -> Protocol.Position.{ x; y = y + 1 }
-      | `Left -> Protocol.Position.{ x = x - 1; y }
-      | `Right -> Protocol.Position.{ x = x + 1; y }
+      | Up -> Protocol.Position.{ x; y = y - 1 }
+      | Down -> Protocol.Position.{ x; y = y + 1 }
+      | Left -> Protocol.Position.{ x = x - 1; y }
+      | Right -> Protocol.Position.{ x = x + 1; y }
     in
     
     (* Check for collisions with other players *)
@@ -90,14 +90,14 @@ let get_players t = List.map t.players ~f:(fun (_, player) -> player)
 let get_player t ~player_id = List.Assoc.find t.players player_id ~equal:String.equal
 
 (* Key mapping for client controls *)
-let key_to_action = function
-  | `ASCII 'w' | `ASCII 'W' -> Some (`Up)
-  | `ASCII 'a' | `ASCII 'A' -> Some (`Left)
-  | `ASCII 's' | `ASCII 'S' -> Some (`Down)
-  | `ASCII 'd' | `ASCII 'D' -> Some (`Right)
-  | `Arrow `Up -> Some (`Up)
-  | `Arrow `Down -> Some (`Down)
-  | `Arrow `Left -> Some (`Left)
-  | `Arrow `Right -> Some (`Right)
-  | `ASCII 'q' | `ASCII 'Q' -> None (* quit *)
-  | _ -> None
+let key_to_action : Protocol.Key_input.t -> Protocol.Direction.t option = function
+  | ASCII 'w' | ASCII 'W' -> Some Up
+  | ASCII 'a' | ASCII 'A' -> Some Left
+  | ASCII 's' | ASCII 'S' -> Some Down
+  | ASCII 'd' | ASCII 'D' -> Some Right
+  | Arrow Up -> Some Up
+  | Arrow Down -> Some Down
+  | Arrow Left -> Some Left
+  | Arrow Right -> Some Right
+  | ASCII 'q' | ASCII 'Q' -> None (* quit *)
+  | ASCII _ -> None
