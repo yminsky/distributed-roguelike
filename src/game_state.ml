@@ -5,7 +5,9 @@ type t =
   ; max_players : int
   }
 
-let create ?(max_players = 10) () = { players = []; max_players }
+let default_max_players = 10
+let max_spawn_search_radius = 20
+let create ?(max_players = default_max_players) () = { players = []; max_players }
 let player_sigils = [| '@'; '#'; '$'; '%'; '&'; '*'; '+'; '='; '?'; '!' |]
 
 let next_available_sigil t =
@@ -28,7 +30,7 @@ let find_spawn_position t =
   in
   (* Try positions in a spiral around origin *)
   let rec try_positions radius =
-    if radius > 20
+    if radius > max_spawn_search_radius
     then failwith "Cannot find spawn position"
     else (
       match
@@ -43,7 +45,7 @@ let find_spawn_position t =
 
 let add_player t ~player_id ~player_name =
   if List.length t.players >= t.max_players
-  then Error "Server full (max 10 players)"
+  then Error (sprintf "Server full (max %d players)" t.max_players)
   else (
     match next_available_sigil t with
     | None -> Error "No available sigils"

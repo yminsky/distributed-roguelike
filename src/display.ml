@@ -1,5 +1,7 @@
 open! Core
 
+let grid_marker_spacing = 10
+
 module World_view = struct
   type t =
     { players : Protocol.Player.t list
@@ -27,8 +29,8 @@ let render_grid (world_view : World_view.t) =
       let world_x = cx - half_width + col in
       let world_pos = Protocol.Position.{ x = world_x; y = world_y } in
       let render_empty_cell world_x world_y =
-        if world_x mod 10 = 0 || world_y mod 10 = 0
-        then '.', Notty.A.(fg lightblack) (* Grid markers every 10 units *)
+        if world_x mod grid_marker_spacing = 0 || world_y mod grid_marker_spacing = 0
+        then '.', Notty.A.(fg lightblack) (* Grid markers *)
         else ' ', Notty.A.empty
       in
       let ch, color =
