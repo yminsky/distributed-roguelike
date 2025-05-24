@@ -63,13 +63,7 @@ let move_player t ~player_id ~(direction : Protocol.Direction.t) =
   match List.Assoc.find t.players player_id ~equal:String.equal with
   | None -> Error "Player not found"
   | Some player ->
-    let { Protocol.Position.x; y } = player.position in
-    let new_pos = match direction with
-      | Up -> Protocol.Position.{ x; y = y - 1 }
-      | Down -> Protocol.Position.{ x; y = y + 1 }
-      | Left -> Protocol.Position.{ x = x - 1; y }
-      | Right -> Protocol.Position.{ x = x + 1; y }
-    in
+    let new_pos = Protocol.Direction.apply_to_position direction player.position in
     
     (* Check for collisions with other players *)
     let collision = 

@@ -37,11 +37,7 @@ let%expect_test "key to action conversion" =
   let test_key key =
     match Game_state.key_to_action (ASCII key) with
     | Some direction ->
-      printf "%c -> %s\n" key (match direction with
-        | Up -> "Up"
-        | Down -> "Down" 
-        | Left -> "Left"
-        | Right -> "Right")
+      printf "%c -> %s\n" key (Protocol.Direction.to_string direction)
     | None -> printf "%c -> None\n" key
   in
   test_key 'w';
@@ -56,24 +52,12 @@ let%expect_test "key to action conversion" =
     | Some direction ->
       printf
         "Arrow %s -> %s\n"
-        (match arrow with
-         | Up -> "Up"
-         | Down -> "Down"
-         | Left -> "Left"
-         | Right -> "Right")
-        (match direction with
-         | Up -> "Up"
-         | Down -> "Down"
-         | Left -> "Left"
-         | Right -> "Right")
+        (Protocol.Direction.to_string arrow)
+        (Protocol.Direction.to_string direction)
     | None ->
       printf
         "Arrow %s -> None\n"
-        (match arrow with
-         | Up -> "Up"
-         | Down -> "Down"
-         | Left -> "Left"
-         | Right -> "Right")
+        (Protocol.Direction.to_string arrow)
   in
   test_arrow Up;
   test_arrow Down;
