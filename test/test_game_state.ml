@@ -81,7 +81,7 @@ let%expect_test "key to action conversion" =
 
 let%expect_test "visual state transitions" =
   let render_state state =
-    Notty_test_utils.render_state_to_string ~width:21 ~height:11 state
+    Notty_test_utils.render_state_to_string ~width:60 ~height:11 state
   in
   printf "=== Initial State ===\n";
   let state = Game_state.Local_state.create () in
@@ -96,47 +96,47 @@ let%expect_test "visual state transitions" =
   [%expect
     {|
     === Initial State ===
-    .         .         .
-    .         .         .
-    .         .         .
-    .         .         .
-    .         .         .
-    ..........@..........
-    .         .         .
-    .         .         .
-    .         .         .
-    .         .         .
-    .         .         .
+    .         .         .         .         .         .
+    .         .         .         .         .         .
+    .         .         .         .         .         .
+    .         .         .         .         .         .
+    .         .         .         .         .         .
+    ..............................@.............................
+    .         .         .         .         .         .
+    .         .         .         .         .         .
+    .         .         .         .         .         .
+    .         .         .         .         .         .
+    .         .         .         .         .         .
 
     Position: (0, 0) | Use WASD to move, Q to quit
 
     === After moving right twice ===
-            .         .
-            .         .
-            .         .
-            .         .
-            .         .
-    ..........@..........
-            .         .
-            .         .
-            .         .
-            .         .
-            .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+    ..............................@.............................
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
 
     Position: (2, 0) | Use WASD to move, Q to quit
 
     === After moving down once ===
-            .         .
-            .         .
-            .         .
-            .         .
-    .....................
-            . @       .
-            .         .
-            .         .
-            .         .
-            .         .
-            .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+    ............................................................
+            .         .         . @       .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
+            .         .         .         .         .         .
 
     Position: (2, 1) | Use WASD to move, Q to quit
     |}]
