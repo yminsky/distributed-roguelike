@@ -1,5 +1,6 @@
 (library
  (name lan_rogue_test)
- (libraries lan_rogue core async async_rpc_kernel)
+ (libraries lan_rogue core async async_rpc_kernel notty notty_async str)
  (inline_tests)
- (preprocess (pps ppx_jane)))
+ (preprocess
+  (pps ppx_jane)))
