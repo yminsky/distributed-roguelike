@@ -15,6 +15,20 @@ let send_request client request =
   Rpc.Rpc.dispatch Protocol.Rpc_calls.send_request client.connection request
 ;;
 
+let handle_response_result result ~on_success ~error_prefix =
+  match result with
+  | Ok Protocol.Response.Ok -> on_success ()
+  | Ok (Protocol.Response.Error msg) -> failwith (error_prefix ^ ": " ^ msg)
+  | Error err -> failwith (error_prefix ^ " (RPC error): " ^ Error.to_string_hum err)
+;;
+
+let handle_rpc_result_error result ~on_success ~error_prefix =
+  match result with
+  | Ok (Ok value) -> on_success value
+  | Ok (Error err) -> failwith (error_prefix ^ ": " ^ Error.to_string_hum err)
+  | Error err -> failwith (error_prefix ^ " (RPC error): " ^ Error.to_string_hum err)
+;;
+
 let handle_input client =
   let handle_movement_key direction =
     let%bind result = send_request client (Move { direction }) in
@@ -27,43 +41,37 @@ let handle_input client =
       Stdio.eprintf "RPC error: %s\n" (Error.to_string_hum err);
       return `Continue
   in
-  let handle_quit_key = function
-    | `ASCII ('q' | 'Q') ->
+  let handle_key_event (key, mods) =
+    match key, mods with
+    (* Ctrl-C handling *)
+    | `ASCII ('c' | 'C'), [ `Ctrl ] ->
       let%bind _result = send_request client Leave in
       return `Quit
+    (* Quit key handling *)
+    | `ASCII ('q' | 'Q'), [] ->
+      let%bind _result = send_request client Leave in
+      return `Quit
+    (* Movement and other keys without modifiers *)
+    | key, [] ->
+      (match Protocol.Key_input.of_notty_key key with
+       | Some key_input ->
+         (match Game_state.key_to_action key_input with
+          | Some direction -> handle_movement_key direction
+          | None -> return `Continue)
+       | None -> return `Continue)
+    (* Ignore keys with other modifiers *)
     | _ -> return `Continue
-  in
-  let handle_key key =
-    match Protocol.Key_input.of_notty_key key with
-    | Some key_input ->
-      (match Game_state.key_to_action key_input with
-       | Some direction -> handle_movement_key direction
-       | None -> handle_quit_key key)
-    | None -> return `Continue (* ignore unmappable keys *)
   in
   let rec loop () =
     let%bind result = Notty_async.Term.events client.term |> Pipe.read in
     match result with
     | `Eof -> return `Quit
-    | `Ok event ->
-      (match event with
-       | `Key (key, mods) ->
-         (* Check for Ctrl-C *)
-         (match key, mods with
-          | `ASCII 'c', [ `Ctrl ] | `ASCII 'C', [ `Ctrl ] ->
-            let%bind _result = send_request client Leave in
-            return `Quit
-          | _ ->
-            (* Handle other keys *)
-            (match mods with
-             | [] ->
-               let%bind action = handle_key key in
-               (match action with
-                | `Continue -> loop ()
-                | `Quit -> return `Quit)
-             | _ -> loop ()))
-         (* ignore keys with modifiers for now *)
-       | _ -> loop ())
+    | `Ok (`Key key_event) ->
+      let%bind action = handle_key_event key_event in
+      (match action with
+       | `Continue -> loop ()
+       | `Quit -> return `Quit)
+    | `Ok _ -> loop () (* ignore non-key events *)
   in
   loop ()
 ;;
@@ -72,11 +80,9 @@ let handle_state_updates client =
   let%bind result =
     Rpc.State_rpc.dispatch (Protocol.Rpc_calls.get_game_state ()) client.connection ()
   in
-  let pipe, initial_state, _metadata =
-    match result with
-    | Ok (Ok (initial_state, pipe, metadata)) -> pipe, initial_state, metadata
-    | Ok (Error err) -> failwith ("State RPC failed: " ^ Error.to_string_hum err)
-    | Error err -> failwith ("State RPC dispatch failed: " ^ Error.to_string_hum err)
+  let initial_state, pipe, _metadata =
+    handle_rpc_result_error result ~error_prefix:"State RPC failed" ~on_success:(fun x ->
+      x)
   in
   (* Initialize client state with the initial game state from server *)
   client.your_id <- initial_state.your_id;
@@ -85,23 +91,21 @@ let handle_state_updates client =
     let%bind result = Pipe.read pipe in
     match result with
     | `Eof -> return ()
-    | `Ok update ->
-      (match update with
-       | Player_joined player ->
-         client.all_players <- player :: client.all_players;
-         loop ()
-       | Player_moved { player_id; new_position } ->
-         client.all_players
-         <- List.map client.all_players ~f:(fun player ->
-              if Protocol.Player_id.equal player.id player_id
-              then { player with position = new_position }
-              else player);
-         loop ()
-       | Player_left player_id ->
-         client.all_players
-         <- List.filter client.all_players ~f:(fun player ->
-              not (Protocol.Player_id.equal player.id player_id));
-         loop ())
+    | `Ok (Player_joined player) ->
+      client.all_players <- player :: client.all_players;
+      loop ()
+    | `Ok (Player_moved { player_id; new_position }) ->
+      client.all_players
+      <- List.map client.all_players ~f:(fun player ->
+           if Protocol.Player_id.equal player.id player_id
+           then { player with position = new_position }
+           else player);
+      loop ()
+    | `Ok (Player_left player_id) ->
+      client.all_players
+      <- List.filter client.all_players ~f:(fun player ->
+           not (Protocol.Player_id.equal player.id player_id));
+      loop ()
   in
   loop ()
 ;;
@@ -157,18 +161,15 @@ let connect_to_server ~host ~port ~player_name =
   let%bind result =
     Rpc.Rpc.dispatch Protocol.Rpc_calls.send_request connection (Join { player_name })
   in
-  match result with
-  | Error err -> failwith ("Join request failed: " ^ Error.to_string_hum err)
-  | Ok (Error msg) -> failwith ("Join rejected: " ^ msg)
-  | Ok Ok ->
+  handle_response_result result ~error_prefix:"Join request failed" ~on_success:(fun () ->
     let%bind state_result =
       Rpc.State_rpc.dispatch (Protocol.Rpc_calls.get_game_state ()) connection ()
     in
-    let pipe, initial_state =
-      match state_result with
-      | Ok (Ok (initial_state, pipe, _metadata)) -> pipe, initial_state
-      | Ok (Error err) -> failwith ("State RPC failed: " ^ Error.to_string_hum err)
-      | Error err -> failwith ("State RPC dispatch failed: " ^ Error.to_string_hum err)
+    let initial_state, pipe, _metadata =
+      handle_rpc_result_error
+        state_result
+        ~error_prefix:"State RPC failed"
+        ~on_success:(fun x -> x)
     in
     let%bind term = Notty_async.Term.create () in
     let client =
@@ -178,7 +179,7 @@ let connect_to_server ~host ~port ~player_name =
       ; term
       }
     in
-    return (client, pipe)
+    return (client, pipe))
 ;;
 
 let cleanup_and_exit client =
@@ -206,11 +207,9 @@ let main_loop ~host ~port ~player_name =
   don't_wait_for (render_loop client);
   don't_wait_for (handle_state_updates client);
   (* Handle input until quit *)
-  let%bind result = handle_input client in
-  match result with
-  | `Quit | `Continue ->
-    (* Clean shutdown *)
-    cleanup_and_exit client
+  let%bind _result = handle_input client in
+  (* Clean shutdown *)
+  cleanup_and_exit client
 ;;
 
 let command =
