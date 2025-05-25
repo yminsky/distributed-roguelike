@@ -152,20 +152,21 @@ let start_server ~port =
       (fun inet_addr reader writer ->
          printf "Client connected from %s\n%!" (Socket.Address.Inet.to_string inet_addr);
          let connection_state = Connection_state.create () in
-         Rpc.Connection.server_with_close
-           reader
-           writer
-           ~implementations:
-             (Rpc.Implementations.create_exn
-                ~implementations
-                ~on_unknown_rpc:`Close_connection
-                ~on_exception:Rpc.On_exception.Close_connection)
-           ~connection_state:(fun rpc_conn ->
-             connection_state.connection <- Some rpc_conn;
-             printf "RPC connection established\n%!";
-             connection_state)
-           ~on_handshake_error:`Raise
-         >>= fun () ->
+         let%bind () =
+           Rpc.Connection.server_with_close
+             reader
+             writer
+             ~implementations:
+               (Rpc.Implementations.create_exn
+                  ~implementations
+                  ~on_unknown_rpc:`Close_connection
+                  ~on_exception:Rpc.On_exception.Close_connection)
+             ~connection_state:(fun rpc_conn ->
+               connection_state.connection <- Some rpc_conn;
+               printf "RPC connection established\n%!";
+               connection_state)
+             ~on_handshake_error:`Raise
+         in
          (* Connection has closed *)
          (match connection_state.player_id with
           | None -> ()
