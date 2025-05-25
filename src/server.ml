@@ -9,7 +9,7 @@ module Connection_state = struct
     ; mutable connection : Rpc.Connection.t option
     }
 
-  let _create () = { player_id = None; connection = None }
+  let create () = { player_id = None; connection = None }
 end
 
 module Server_state = struct
@@ -151,33 +151,28 @@ let start_server ~port =
       (Tcp.Where_to_listen.of_port port)
       (fun inet_addr reader writer ->
          printf "Client connected from %s\n%!" (Socket.Address.Inet.to_string inet_addr);
-         let connection_state = Connection_state._create () in
+         let connection_state = Connection_state.create () in
          Rpc.Connection.server_with_close
            reader
            writer
            ~implementations:
              (Rpc.Implementations.create_exn
                 ~implementations
-                ~on_unknown_rpc:`Close_connection)
-           ~connection_state
+                ~on_unknown_rpc:`Close_connection
+                ~on_exception:Rpc.On_exception.Close_connection)
+           ~connection_state:(fun rpc_conn ->
+             connection_state.connection <- Some rpc_conn;
+             printf "RPC connection established\n%!";
+             connection_state)
            ~on_handshake_error:`Raise
-         >>= function
-         | Error exn ->
-           printf "RPC connection failed: %s\n%!" (Exn.to_string exn);
-           return ()
-         | Ok rpc_conn ->
-           printf "RPC connection established\n%!";
-           (* Store the connection in the connection state *)
-           connection_state.connection <- Some rpc_conn;
-           (* Clean up when connection closes *)
-           Rpc.Connection.close_finished rpc_conn
-           >>= fun () ->
-           (match connection_state.player_id with
-            | None -> ()
-            | Some player_id ->
-              let _ = Server_state.remove_player server_state ~player_id in
-              printf "Player %s disconnected\n%!" player_id);
-           return ())
+         >>= fun () ->
+         (* Connection has closed *)
+         (match connection_state.player_id with
+          | None -> ()
+          | Some player_id ->
+            ignore (Server_state.remove_player server_state ~player_id : bool);
+            printf "Player %s disconnected\n%!" player_id);
+         return ())
   in
   printf "Game server listening on port %d\n%!" port;
   Tcp.Server.close_finished server
