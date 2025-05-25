@@ -10,6 +10,8 @@ module World_view : sig
     ; center_pos : Protocol.Position.t (** Position to center the view on *)
     ; view_width : int
     ; view_height : int
+    ; visible_positions : Protocol.Position.Set.t
+    (** Positions currently visible to the viewing player *)
     }
 end
 

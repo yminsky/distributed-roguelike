@@ -7,6 +7,7 @@ module World_view = struct
     ; center_pos : Protocol.Position.t
     ; view_width : int
     ; view_height : int
+    ; visible_positions : Protocol.Position.Set.t
     }
 end
 
@@ -17,6 +18,7 @@ let render_grid (world_view : World_view.t) =
       ; view_height
       ; players
       ; walls
+      ; visible_positions
       }
     =
     world_view
@@ -30,19 +32,23 @@ let render_grid (world_view : World_view.t) =
   (* Create a set of wall positions for efficient lookup *)
   let wall_set = Set.of_list (module Protocol.Position) walls in
   let render_empty_cell _world_x _world_y =
-    '.', A.(fg lightblack) (* All floor tiles are periods *)
+    '.', A.(fg lightblack)
+    (* All floor tiles are periods *)
   in
   let render_cell world_x world_y =
     let world_pos = Protocol.Position.{ x = world_x; y = world_y } in
-    let ch, color =
-      match List.Assoc.find player_map world_pos ~equal:Protocol.Position.equal with
-      | Some player -> player.sigil, A.(fg lightgreen)
-      | None ->
-        if Set.mem wall_set world_pos
-        then '#', A.(fg white) (* Wall character *)
-        else render_empty_cell world_x world_y
-    in
-    I.(string color (String.of_char ch))
+    if not (Set.mem visible_positions world_pos)
+    then I.(string A.(fg black) " ") (* Not visible - render as black space *)
+    else (
+      let ch, color =
+        match List.Assoc.find player_map world_pos ~equal:Protocol.Position.equal with
+        | Some player -> player.sigil, A.(fg lightgreen)
+        | None ->
+          if Set.mem wall_set world_pos
+          then '#', A.(fg white) (* Wall character *)
+          else render_empty_cell world_x world_y
+      in
+      I.(string color (String.of_char ch)))
   in
   let render_row row =
     let world_y = cy - half_height + row in

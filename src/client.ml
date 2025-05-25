@@ -3,6 +3,7 @@ open Async
 
 let default_host = "127.0.0.1"
 let default_port = 8080
+let default_visibility_radius = 10
 
 type game_client =
   { connection : Rpc.Connection.t
@@ -126,6 +127,15 @@ let render_loop client =
     (* Reserve 2 lines for status display at bottom *)
     let view_height = max 5 (height - 2) in
     let view_width = max 10 width in
+    let visible_positions =
+      match your_player with
+      | None -> Protocol.Position.Set.empty
+      | Some player ->
+        Visibility.compute_visible_tiles
+          ~from:player.position
+          ~walls:(Protocol.Position.Set.of_list client.walls)
+          ~max_radius:default_visibility_radius
+    in
     let world_view =
       Display.World_view.
         { players = client.all_players
@@ -133,6 +143,7 @@ let render_loop client =
         ; center_pos
         ; view_width
         ; view_height
+        ; visible_positions
         }
     in
     let ui = Display.render_ui world_view in

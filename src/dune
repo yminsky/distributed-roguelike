@@ -3,4 +3,5 @@
  (name lan_rogue)
  (libraries core async notty notty_async)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane))
+ (modules_without_implementation visibility))

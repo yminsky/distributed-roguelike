@@ -204,7 +204,21 @@ let%expect_test "visual multi-player rendering" =
   let walls = Game_state.get_walls state in
   let world_view =
     Display.World_view.
-      { players; walls; center_pos = { x = 0; y = 0 }; view_width = 15; view_height = 9 }
+      { players
+      ; walls
+      ; center_pos = { x = 0; y = 0 }
+      ; view_width = 15
+      ; view_height = 9
+      ; visible_positions =
+          (* For tests, make everything visible within view bounds *)
+          let positions = ref [] in
+          for x = -7 to 7 do
+            for y = -4 to 4 do
+              positions := Protocol.Position.{ x; y } :: !positions
+            done
+          done;
+          Protocol.Position.Set.of_list !positions
+      }
   in
   let image = Display.render_ui world_view in
   print_endline (Notty_test_utils.render_to_string image);
