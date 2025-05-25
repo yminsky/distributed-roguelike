@@ -15,6 +15,20 @@
   - Could generate different maze styles per level
   - Support for rooms and corridors
 
+#### Spawn Point Safety Problem
+
+When adding walls, we need to ensure players spawn in accessible areas. Options:
+
+1. **Designated spawn areas**: Mark specific regions as valid spawn points, guaranteed to be accessible
+2. **Flood-fill validation**: After placing walls, flood-fill from a known "inside" point to identify all reachable spaces
+3. **Wall generation that guarantees connectivity**: Use maze generation algorithms that ensure all spaces remain connected
+4. **Explicit room/corridor structure**: Define rooms and corridors as first-class concepts, then spawn only in rooms
+
+**Implementation plan**:
+- Start with hardcoded test maze with known safe spawn points
+- Add basic wall representation and collision detection
+- Later add proper maze generation with connectivity guarantees
+
 ### 2. NPC System
 - **Basic NPCs**: Stationary or wandering creatures
 - **AI Behaviors**:
