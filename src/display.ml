@@ -83,7 +83,7 @@ let render_ui (world_view : World_view.t) =
   I.(grid <-> I.(string A.empty "") <-> status)
 ;;
 
-let default_visibility_radius = 4
+let default_visibility_radius = 10
 
 let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height =
   let viewing_player =
