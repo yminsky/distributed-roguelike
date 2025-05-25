@@ -18,7 +18,10 @@ module Server_state = struct
   type t =
     { mutable game_state : Game_state.t
     ; mutable next_player_id : int
+        (* TODO: leave a comment explaining what the next player id is for *)
     ; state_writers : Protocol.Update.t Pipe.Writer.t list ref
+    (* TODO: Should these be called state_writers, or update writers?
+       Doesn't the latter make more sense? *)
     }
 
   let create () =

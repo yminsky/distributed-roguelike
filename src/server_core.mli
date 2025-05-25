@@ -4,6 +4,8 @@ open! Core
 open Async_kernel
 module Rpc = Async_rpc_kernel.Rpc
 
+(* TODO: Make this abstract. You shouldn't be exposing a mutable
+   data-structure like this directly *)
 module Connection_state : sig
   type t =
     { mutable player_id : Protocol.Player_id.t option

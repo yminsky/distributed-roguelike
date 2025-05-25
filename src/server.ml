@@ -27,6 +27,7 @@ let start_server ~port =
   Tcp.Server.close_finished server
 ;;
 
+(* TODO: this function is unnecessary *)
 let main_loop ~port = start_server ~port
 
 let command =
