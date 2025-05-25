@@ -5,10 +5,13 @@ with OCaml and Jane Street libraries.
 
 ## Project Goals
 
-- **Simple multiplayer**: Multiple players can connect and play together on the same LAN
+- **Simple multiplayer**: Multiple players can connect and play
+  together on the same LAN
 - **Rogue-like client**: Text-based interface with character movement
-- **Centralized server**: Game server maintains authoritative game state
-- **Real-time updates**: Players see each other's movements in real-time
+- **Centralized server**: Game server maintains authoritative game
+  state
+- **Real-time updates**: Players see each other's movements in
+  real-time
 
 ## Game Design
 
