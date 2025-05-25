@@ -12,31 +12,30 @@ module Connection_state = struct
     }
 
   let create () = { player_id = None; connection = None }
+  let player_id t = t.player_id
 end
 
 module Server_state = struct
   type t =
     { mutable game_state : Game_state.t
     ; mutable next_player_id : int
-        (* TODO: leave a comment explaining what the next player id is for *)
-    ; state_writers : Protocol.Update.t Pipe.Writer.t list ref
-    (* TODO: Should these be called state_writers, or update writers?
-       Doesn't the latter make more sense? *)
+        (* Counter for generating unique player IDs (e.g., player_1, player_2, etc.) *)
+    ; update_writers : Protocol.Update.t Pipe.Writer.t list ref
     }
 
   let create () =
-    { game_state = Game_state.create (); next_player_id = 1; state_writers = ref [] }
+    { game_state = Game_state.create (); next_player_id = 1; update_writers = ref [] }
   ;;
 
-  let add_state_writer t writer = t.state_writers := writer :: !(t.state_writers)
+  let add_update_writer t writer = t.update_writers := writer :: !(t.update_writers)
 
-  let remove_state_writer t writer =
-    t.state_writers
-    := List.filter !(t.state_writers) ~f:(fun w -> not (phys_equal w writer))
+  let remove_update_writer t writer =
+    t.update_writers
+    := List.filter !(t.update_writers) ~f:(fun w -> not (phys_equal w writer))
   ;;
 
   let broadcast_update t update =
-    List.iter !(t.state_writers) ~f:(fun writer ->
+    List.iter !(t.update_writers) ~f:(fun writer ->
       if not (Pipe.is_closed writer) then Pipe.write_without_pushback writer update)
   ;;
 
@@ -86,13 +85,13 @@ let handle_request server_state connection_state request =
          "Player %s (%s) joined\n%!"
          player.name
          (Protocol.Player_id.to_string player.id);
-       return Protocol.Response.Ok
+       return (Ok ())
      | Error msg ->
        printf "Join failed: %s\n%!" msg;
-       return (Protocol.Response.Error msg))
+       return (Error msg))
   | Move { direction } ->
     (match connection_state.Connection_state.player_id with
-     | None -> return (Protocol.Response.Error "Not joined")
+     | None -> return (Error "Not joined")
      | Some player_id ->
        (match Server_state.move_player server_state ~player_id ~direction with
         | Ok () ->
@@ -100,18 +99,18 @@ let handle_request server_state connection_state request =
             "Player %s moved %s\n%!"
             (Protocol.Player_id.to_string player_id)
             (Protocol.Direction.to_string direction);
-          return Protocol.Response.Ok
+          return (Ok ())
         | Error msg ->
           printf "Move failed: %s\n%!" msg;
-          return (Protocol.Response.Error msg)))
+          return (Error msg)))
   | Leave ->
     (match connection_state.Connection_state.player_id with
-     | None -> return Protocol.Response.Ok
+     | None -> return (Ok ())
      | Some player_id ->
        let _ = Server_state.remove_player server_state ~player_id in
        connection_state.Connection_state.player_id <- None;
        printf "Player %s left\n%!" (Protocol.Player_id.to_string player_id);
-       return Protocol.Response.Ok)
+       return (Ok ()))
 ;;
 
 let handle_state_rpc server_state connection_state connection =
@@ -127,9 +126,9 @@ let handle_state_rpc server_state connection_state connection =
       }
   in
   let reader, writer = Pipe.create () in
-  Server_state.add_state_writer server_state writer;
+  Server_state.add_update_writer server_state writer;
   upon (Rpc.Connection.close_finished connection) (fun () ->
-    Server_state.remove_state_writer server_state writer;
+    Server_state.remove_update_writer server_state writer;
     Pipe.close writer);
   return (Ok (initial_state, reader))
 ;;

@@ -16,6 +16,9 @@ TCP/IP.
 # Build the project
 dune build @default
 
+# Check if changes to .mli files break the build
+dune build @check
+
 # Run tests
 dune build @runtest
 
@@ -31,6 +34,12 @@ dune build @fmt --auto-promote
 # Run a specific test file
 dune exec test/<test_name>.exe
 ```
+
+## Development Tips
+
+- When making types abstract in `.mli` files, use `dune build @check` to find
+  all places where the implementation details are used. This is more reliable
+  than text-based searches.
 
 ## Architecture
 

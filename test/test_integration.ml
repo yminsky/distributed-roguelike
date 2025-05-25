@@ -32,8 +32,8 @@ let test_client_server_with_pipe_transport () =
       (Protocol.Request.Join { player_name = "TestPlayer" })
   in
   (match join_result with
-   | Ok Protocol.Response.Ok -> printf "Join successful\n"
-   | Ok (Protocol.Response.Error msg) -> printf "Join failed: %s\n" msg
+   | Ok (Ok ()) -> printf "Join successful\n"
+   | Ok (Error msg) -> printf "Join failed: %s\n" msg
    | Error err -> printf "RPC error: %s\n" (Error.to_string_hum err));
   (* Get game state *)
   let%bind state_result =
@@ -57,8 +57,8 @@ let test_client_server_with_pipe_transport () =
       (Protocol.Request.Move { direction = Up })
   in
   (match move_result with
-   | Ok Protocol.Response.Ok -> printf "Move successful\n"
-   | Ok (Protocol.Response.Error msg) -> printf "Move failed: %s\n" msg
+   | Ok (Ok ()) -> printf "Move successful\n"
+   | Ok (Error msg) -> printf "Move failed: %s\n" msg
    | Error err -> printf "RPC error: %s\n" (Error.to_string_hum err));
   (* Wait for state update *)
   let%bind update_result = Pipe.read pipe in
@@ -107,12 +107,12 @@ let%expect_test "server handles client join directly" =
       (Protocol.Request.Join { player_name = "Alice" })
   in
   (match response with
-   | Protocol.Response.Ok ->
+   | Ok () ->
      printf "Join successful\n";
-     (match connection_state.player_id with
+     (match Server_core.Connection_state.player_id connection_state with
       | Some id -> printf "Player ID set to: %s\n" (Protocol.Player_id.to_string id)
       | None -> printf "Error: Player ID not set\n")
-   | Protocol.Response.Error msg -> printf "Join failed: %s\n" msg);
+   | Error msg -> printf "Join failed: %s\n" msg);
   [%expect
     {|
     Player Alice (player_1) joined

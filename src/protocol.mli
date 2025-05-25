@@ -62,9 +62,6 @@ module Request : sig
   [@@deriving sexp, bin_io]
 end
 
-(* TODO: When a player joins, I think it would be better for the
-   server to determine the location, and put it on the join message,
-   rather than having the clients all recompute it. *)
 module Update : sig
   type t =
     | Player_joined of Player.t
@@ -84,12 +81,8 @@ module Initial_state : sig
   [@@deriving sexp, bin_io]
 end
 
-(* TODO: Get rid of this type, and use the Result.t from Core *)
 module Response : sig
-  type t =
-    | Ok
-    | Error of string
-  [@@deriving sexp, bin_io]
+  type t = (unit, string) Result.t [@@deriving sexp, bin_io]
 end
 
 module Rpc_calls : sig

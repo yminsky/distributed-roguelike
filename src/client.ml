@@ -17,8 +17,8 @@ let send_request client request =
 
 let handle_response_result result ~on_success ~error_prefix =
   match result with
-  | Ok Protocol.Response.Ok -> on_success ()
-  | Ok (Protocol.Response.Error msg) -> failwith (error_prefix ^ ": " ^ msg)
+  | Ok (Ok ()) -> on_success ()
+  | Ok (Error msg) -> failwith (error_prefix ^ ": " ^ msg)
   | Error err -> failwith (error_prefix ^ " (RPC error): " ^ Error.to_string_hum err)
 ;;
 
@@ -33,7 +33,7 @@ let handle_input client =
   let handle_movement_key direction =
     let%bind result = send_request client (Move { direction }) in
     match result with
-    | Ok Ok -> return `Continue
+    | Ok (Ok ()) -> return `Continue
     | Ok (Error msg) ->
       Stdio.eprintf "Movement failed: %s\n" msg;
       return `Continue

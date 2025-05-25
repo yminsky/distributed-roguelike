@@ -103,10 +103,7 @@ module Initial_state = struct
 end
 
 module Response = struct
-  type t =
-    | Ok
-    | Error of string
-  [@@deriving sexp, bin_io]
+  type t = (unit, string) Result.t [@@deriving sexp, bin_io]
 end
 
 module Rpc_calls = struct
