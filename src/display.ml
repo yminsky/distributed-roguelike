@@ -1,7 +1,5 @@
 open! Core
 
-let grid_marker_spacing = 10
-
 module World_view = struct
   type t =
     { players : Protocol.Player.t list
@@ -31,10 +29,8 @@ let render_grid (world_view : World_view.t) =
   in
   (* Create a set of wall positions for efficient lookup *)
   let wall_set = Set.of_list (module Protocol.Position) walls in
-  let render_empty_cell world_x world_y =
-    if world_x mod grid_marker_spacing = 0 || world_y mod grid_marker_spacing = 0
-    then '.', A.(fg lightblack) (* Grid markers *)
-    else ' ', A.empty
+  let render_empty_cell _world_x _world_y =
+    '.', A.(fg lightblack) (* All floor tiles are periods *)
   in
   let render_cell world_x world_y =
     let world_pos = Protocol.Position.{ x = world_x; y = world_y } in
