@@ -117,12 +117,15 @@ module Rpc_calls = struct
   ;;
 
   let get_game_state =
-    Rpc.State_rpc.create
-      ~name:"game_state"
-      ~version:1
-      ~bin_query:Unit.bin_t
-      ~bin_state:Initial_state.bin_t
-      ~bin_update:Update.bin_t
-      ~bin_error:Error.bin_t
+    let rpc =
+      Rpc.State_rpc.create
+        ~name:"game_state"
+        ~version:1
+        ~bin_query:Unit.bin_t
+        ~bin_state:Initial_state.bin_t
+        ~bin_update:Update.bin_t
+        ~bin_error:Error.bin_t
+    in
+    fun () -> rpc ()
   ;;
 end

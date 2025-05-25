@@ -7,7 +7,7 @@ type t =
 
 let default_max_players = 10
 let max_spawn_search_radius = 20
-let create ?(max_players = default_max_players) () = { players = []; max_players }
+let create () = { players = []; max_players = default_max_players }
 let player_sigils = [| '@'; '#'; '$'; '%'; '&'; '*'; '+'; '='; '?'; '!' |]
 
 let next_available_sigil t =

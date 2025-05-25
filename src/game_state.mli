@@ -5,8 +5,8 @@ open! Core
 
 type t
 
-(** Create empty game state. Default max_players is 10. *)
-val create : ?max_players:int -> unit -> t
+(** Create empty game state with max_players of 10. *)
+val create : unit -> t
 
 (** Add a new player with unique spawn position and sigil. Returns Error if server is full
     or no sigils available. *)

@@ -87,9 +87,5 @@ end
 
 module Rpc_calls : sig
   val send_request : (Request.t, Response.t) Rpc.Rpc.t
-
-  val get_game_state
-    :  ?client_pushes_back:unit
-    -> unit
-    -> (unit, Initial_state.t, Update.t, Error.t) Rpc.State_rpc.t
+  val get_game_state : unit -> (unit, Initial_state.t, Update.t, Error.t) Rpc.State_rpc.t
 end
