@@ -1,5 +1,12 @@
 open! Core
 
+module Maze_config = struct
+  type t =
+    | No_maze
+    | Test_maze
+    | Generated of Maze_generation.Config.t * int
+end
+
 type t =
   { players : (Protocol.Player_id.t, Protocol.Player.t) List.Assoc.t
   ; max_players : int
@@ -31,11 +38,14 @@ let create_test_maze_walls () =
   Set.to_list walls_set
 ;;
 
-let create ?(use_test_maze = false) () =
-  { players = []
-  ; max_players = default_max_players
-  ; walls = (if use_test_maze then create_test_maze_walls () else [])
-  }
+let create ?(maze_config = Maze_config.No_maze) () =
+  let walls =
+    match maze_config with
+    | No_maze -> []
+    | Test_maze -> create_test_maze_walls ()
+    | Generated (config, seed) -> Maze_generation.generate ~config ~seed |> Set.to_list
+  in
+  { players = []; max_players = default_max_players; walls }
 ;;
 
 let player_sigils = [| '@'; '#'; '$'; '%'; '&'; '*'; '+'; '='; '?'; '!' |]

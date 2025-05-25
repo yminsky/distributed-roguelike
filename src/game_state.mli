@@ -5,9 +5,18 @@ open! Core
 
 type t
 
-(** Create empty game state with max_players of 10. If use_test_maze is true, creates a
-    simple test maze with walls. *)
-val create : ?use_test_maze:bool -> unit -> t
+(** Maze configuration options *)
+module Maze_config : sig
+  type t =
+    | No_maze (** Empty level with no walls *)
+    | Test_maze (** Simple 7x7 room for testing *)
+    | Generated of Maze_generation.Config.t * int
+    (** Generated maze with config and seed *)
+end
+
+(** Create game state with specified maze configuration. Defaults to No_maze if not
+    specified. *)
+val create : ?maze_config:Maze_config.t -> unit -> t
 
 (** Add a new player with unique spawn position and sigil. Returns Error if server is full
     or no sigils available. *)

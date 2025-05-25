@@ -105,7 +105,7 @@ let%expect_test "key to action conversion" =
 ;;
 
 let%expect_test "wall collision detection" =
-  let state = Game_state.create ~use_test_maze:true () in
+  let state = Game_state.create ~maze_config:Test_maze () in
   let state, player =
     match
       Game_state.add_player
@@ -163,7 +163,7 @@ let%expect_test "wall collision detection" =
 ;;
 
 let%expect_test "visual rendering with walls" =
-  let state = Game_state.create ~use_test_maze:true () in
+  let state = Game_state.create ~maze_config:Test_maze () in
   let state, _ =
     match
       Game_state.add_player
@@ -211,7 +211,7 @@ let%expect_test "visual rendering with walls" =
 ;;
 
 let%expect_test "debug visibility symmetry" =
-  let state = Game_state.create ~use_test_maze:true () in
+  let state = Game_state.create ~maze_config:Test_maze () in
   let state, _ =
     match
       Game_state.add_player
@@ -318,7 +318,7 @@ let%expect_test "debug visibility symmetry" =
 ;;
 
 let%expect_test "visibility blocked by walls" =
-  let state = Game_state.create ~use_test_maze:true () in
+  let state = Game_state.create ~maze_config:Test_maze () in
   let state, _ =
     match
       Game_state.add_player

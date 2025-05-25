@@ -24,7 +24,7 @@ module Server_state = struct
     }
 
   let create () =
-    { game_state = Game_state.create ~use_test_maze:true ()
+    { game_state = Game_state.create ~maze_config:Test_maze ()
     ; next_player_id = 1
     ; update_writers = ref []
     }
