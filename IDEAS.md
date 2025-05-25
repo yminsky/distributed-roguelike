@@ -23,6 +23,138 @@
 - **Combat System**: Turn-based or real-time interactions
 - **NPC Types**: Enemies, merchants, quest-givers
 
+#### NPC Architecture Design
+
+**Option 1: First-Class Module Approach**
+
+```ocaml
+module type NPC = sig
+  type t
+  
+  (* Core identification *)
+  val id : t -> Npc_id.t
+  val name : t -> string
+  val sigil : t -> char
+  
+  (* State and position *)
+  val position : t -> Position.t
+  val health : t -> int
+  val max_health : t -> int
+  
+  (* Behavior - returns desired action given game state *)
+  val think : t -> game_state -> Npc_action.t
+  
+  (* State updates *)
+  val move_to : t -> Position.t -> t
+  val take_damage : t -> int -> t
+  val interact_with_player : t -> Player_id.t -> t * Interaction_result.t
+  
+  (* Serialization *)
+  val to_sexp : t -> Sexp.t
+  val of_sexp : Sexp.t -> t
+end
+
+(* Then use first-class modules *)
+type npc = (module NPC)
+
+(* Example implementation *)
+module Goblin : NPC = struct
+  type t = {
+    id : Npc_id.t;
+    position : Position.t;
+    health : int;
+    aggro_player : Player_id.t option;
+  }
+  
+  let think t game_state =
+    match t.aggro_player with
+    | None -> Npc_action.Wander
+    | Some player_id -> 
+      match find_player game_state player_id with
+      | None -> Npc_action.Wander
+      | Some player -> Npc_action.Chase player.position
+end
+```
+
+**Option 2: Variant + Behavior Pattern Approach**
+
+```ocaml
+(* Define behavior interfaces *)
+module type Movement_behavior = sig
+  val get_move : npc_state -> game_state -> Position.t option
+end
+
+module type Combat_behavior = sig
+  val get_target : npc_state -> game_state -> Player_id.t option
+  val get_attack : npc_state -> Player_id.t -> Attack.t
+end
+
+(* Core NPC type with pluggable behaviors *)
+type npc = {
+  id : Npc_id.t;
+  variant : Npc_variant.t;  (* Goblin | Merchant | Guard | etc. *)
+  position : Position.t;
+  health : int;
+  state : npc_state;
+  movement : (module Movement_behavior);
+  combat : (module Combat_behavior) option;
+}
+
+(* Behaviors can be mixed and matched *)
+module Aggressive_movement : Movement_behavior = struct
+  let get_move state game = 
+    (* Chase nearest player *)
+end
+
+module Merchant_movement : Movement_behavior = struct  
+  let get_move state game =
+    (* Stay in place or patrol between waypoints *)
+end
+```
+
+**Option 3: Simple Variant Approach (Recommended for Starting)**
+
+```ocaml
+(* Start simple, refactor later if needed *)
+type npc_kind = 
+  | Goblin of { aggro_range : int; damage : int }
+  | Merchant of { items : Item.t list; prices : (Item.t * int) list }
+  | Guard of { patrol_route : Position.t list; alert_range : int }
+  | Minotaur of { speaking_style : Speaking_style.t }
+
+type npc = {
+  id : Npc_id.t;
+  kind : npc_kind;
+  position : Position.t;
+  health : int;
+  max_health : int;
+}
+
+(* Behavior is a simple function *)
+val npc_think : npc -> game_state -> Npc_action.t
+
+let npc_think npc game_state =
+  match npc.kind with
+  | Goblin { aggro_range; _ } ->
+    let nearby_players = find_players_in_range game_state npc.position aggro_range in
+    begin match nearby_players with
+    | [] -> Wander (random_adjacent_position npc.position)
+    | player :: _ -> Chase player.position
+    end
+  | Merchant _ -> Stand_still
+  | Guard { patrol_route; _ } -> Patrol patrol_route
+  | Minotaur _ -> Speak_cryptically
+```
+
+**Recommendation**: Start with Option 3 (simple variants) and migrate to Option 1 (first-class modules) once we have more NPC types and complex behaviors. The first-class module approach provides better extensibility but might be overengineering for initial implementation.
+
+**Key Design Principles**:
+1. NPCs should be deterministic given the same game state (for testing)
+2. NPC state updates should be pure functions
+3. All NPC types should serialize/deserialize for save games
+4. Keep NPC logic separate from rendering logic
+5. Server authoritative - NPCs only exist and think on server side
+
 ### 3. Game Mechanics
 - **Items and Inventory**: Collectibles, equipment, consumables
 - **Character Stats**: Health, abilities, experience
