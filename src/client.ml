@@ -3,7 +3,6 @@ open Async
 
 let default_host = "127.0.0.1"
 let default_port = 8080
-let default_visibility_radius = 4
 
 type game_client =
   { connection : Rpc.Connection.t
@@ -114,37 +113,17 @@ let handle_state_updates client =
 
 let render_loop client =
   let rec loop () =
-    let your_player =
-      List.find client.all_players ~f:(fun player ->
-        Protocol.Player_id.equal player.id client.your_id)
-    in
-    let center_pos =
-      match your_player with
-      | Some player -> player.position
-      | None -> Protocol.Position.{ x = 0; y = 0 }
-    in
     let width, height = Notty_async.Term.size client.term in
     (* Reserve 2 lines for status display at bottom *)
     let view_height = max 5 (height - 2) in
     let view_width = max 10 width in
-    let visible_positions =
-      match your_player with
-      | None -> Protocol.Position.Set.empty
-      | Some player ->
-        Visibility.compute_visible_tiles
-          ~from:player.position
-          ~walls:(Protocol.Position.Set.of_list client.walls)
-          ~max_radius:default_visibility_radius
-    in
     let world_view =
-      Display.World_view.
-        { players = client.all_players
-        ; walls = client.walls
-        ; center_pos
-        ; view_width
-        ; view_height
-        ; visible_positions
-        }
+      Display.build_world_view
+        ~players:client.all_players
+        ~walls:client.walls
+        ~viewing_player_id:client.your_id
+        ~view_width
+        ~view_height
     in
     let ui = Display.render_ui world_view in
     let%bind () = Notty_async.Term.image client.term ui in

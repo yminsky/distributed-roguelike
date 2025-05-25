@@ -7,25 +7,13 @@ let render_to_string image = Format.asprintf "%a" (Notty.Render.pp Notty.Cap.dum
 let render_state_to_string ?(width = 21) ?(height = 11) state ~player_id =
   let players = Lan_rogue.Game_state.get_players state in
   let walls = Lan_rogue.Game_state.get_walls state in
-  let center_pos =
-    match Lan_rogue.Game_state.get_player state ~player_id with
-    | Some player -> player.position
-    | None -> Lan_rogue.Protocol.Position.{ x = 0; y = 0 }
-  in
   let world_view =
-    Lan_rogue.Display.World_view.
-      { players
-      ; walls
-      ; center_pos
-      ; view_width = width
-      ; view_height = height
-      ; visible_positions =
-          (* Use actual visibility computation *)
-          Lan_rogue.Visibility.compute_visible_tiles
-            ~from:center_pos
-            ~walls:(Lan_rogue.Protocol.Position.Set.of_list walls)
-            ~max_radius:4
-      }
+    Lan_rogue.Display.build_world_view
+      ~players
+      ~walls
+      ~viewing_player_id:player_id
+      ~view_width:width
+      ~view_height:height
   in
   let image = Lan_rogue.Display.render_ui world_view in
   render_to_string image

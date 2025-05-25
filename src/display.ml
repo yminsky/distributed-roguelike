@@ -82,3 +82,27 @@ let render_ui (world_view : World_view.t) =
   in
   I.(grid <-> I.(string A.empty "") <-> status)
 ;;
+
+let default_visibility_radius = 4
+
+let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height =
+  let viewing_player =
+    List.find players ~f:(fun player ->
+      Protocol.Player_id.equal player.Protocol.Player.id viewing_player_id)
+  in
+  let center_pos =
+    match viewing_player with
+    | Some player -> player.Protocol.Player.position
+    | None -> Protocol.Position.{ x = 0; y = 0 }
+  in
+  let visible_positions =
+    match viewing_player with
+    | None -> Protocol.Position.Set.empty
+    | Some player ->
+      Visibility.compute_visible_tiles
+        ~from:player.Protocol.Player.position
+        ~walls:(Protocol.Position.Set.of_list walls)
+        ~max_radius:default_visibility_radius
+  in
+  World_view.{ players; walls; center_pos; view_width; view_height; visible_positions }
+;;
