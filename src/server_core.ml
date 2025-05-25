@@ -25,7 +25,10 @@ module Server_state = struct
     }
 
   let create () =
-    { game_state = Game_state.create ~maze_config:Test_maze ()
+    let maze_config =
+      Game_state.Maze_config.Generated (Maze_generation.Config.default, Random.int 1000000)
+    in
+    { game_state = Game_state.create ~maze_config ()
     ; next_player_id = 1
     ; update_writers = ref []
     }

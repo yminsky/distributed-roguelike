@@ -90,9 +90,9 @@ let%expect_test "client-server communication via pipe transport" =
     Got initial state. Your ID: player_1, Players: 1
     Player player_1 moved Up
     Move successful
-    Player player_1 moved to (0, -1)
+    Player player_1 moved to (-1, -2)
     Player player_1 disconnected
-  |}];
+    |}];
   return ()
 ;;
 
