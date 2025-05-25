@@ -29,6 +29,121 @@ When adding walls, we need to ensure players spawn in accessible areas. Options:
 - Add basic wall representation and collision detection
 - Later add proper maze generation with connectivity guarantees
 
+### Visibility System Design
+
+#### Core Questions
+
+1. **What should players see?**
+   - Only what's in direct line of sight?
+   - Previously explored areas ("fog of war")?
+   - Different visibility for different players?
+
+2. **How does multiplayer visibility work?**
+   - Does each player have their own visibility?
+   - Can players share visibility information?
+   - Do we show other players even if they're out of sight?
+
+#### Implementation Approaches
+
+**Option 1: Simple Radius-Based Visibility**
+```ocaml
+(* Everything within radius R of player is visible *)
+let is_visible ~player_pos ~tile_pos ~radius =
+  let dx = tile_pos.x - player_pos.x in
+  let dy = tile_pos.y - player_pos.y in
+  (dx * dx) + (dy * dy) <= (radius * radius)
+```
+- Pros: Dead simple, fast
+- Cons: Can see through walls, unrealistic
+
+**Option 2: Ray-Casting (Bresenham's Line)**
+```ocaml
+(* Cast rays from player to each tile on screen edge *)
+let cast_ray ~from ~to_pos ~walls =
+  (* Use Bresenham's algorithm to trace line *)
+  (* Stop if we hit a wall *)
+  ...
+```
+- Pros: Walls block vision properly
+- Cons: Can have artifacts, walls can "hide" tiles behind them incorrectly
+
+**Option 3: Shadow-Casting (Recommended)**
+- Cast shadows from walls to determine dark areas
+- More complex but gives best results
+- Can handle partial visibility elegantly
+- Reference: http://www.roguebasin.com/index.php?title=FOV_using_recursive_shadowcasting
+
+**Option 4: Flood-Fill Based**
+```ocaml
+(* Start at player, flood-fill to adjacent visible tiles *)
+let compute_visibility ~player_pos ~walls ~max_radius =
+  (* BFS from player position *)
+  (* Stop at walls or max radius *)
+  ...
+```
+- Pros: Simple to understand, handles corners well
+- Cons: Can be slower for large areas
+
+#### Multiplayer Considerations
+
+**Approach 1: Server Computes Per-Player Visibility**
+- Server tracks what each player can see
+- Only send visible entities in updates
+- Pros: Prevents cheating, reduces network traffic
+- Cons: More server computation
+
+**Approach 2: Client-Side Visibility**
+- Send all data, let client filter
+- Pros: Simple server, smooth client experience
+- Cons: Cheating possible, more network traffic
+
+**Approach 3: Hybrid**
+- Server sends nearby entities only (rough filtering)
+- Client does precise visibility calculation
+- Balance between security and performance
+
+#### Fog of War Options
+
+1. **No Memory**: Can only see current line-of-sight
+2. **Perfect Memory**: Once seen, always remembered
+3. **Partial Memory**: Remember terrain but not entities
+4. **Decay**: Memory fades over time
+
+#### Recommended Implementation Plan
+
+1. **Phase 1**: Simple radius visibility (ignore walls)
+   - Get the rendering pipeline working
+   - Test multiplayer with different visibility per player
+
+2. **Phase 2**: Add wall occlusion with ray-casting
+   - Implement Bresenham's line algorithm
+   - Handle edge cases (corners, diagonal walls)
+
+3. **Phase 3**: Upgrade to shadow-casting if needed
+   - Better quality visibility
+   - Handle complex scenarios
+
+4. **Phase 4**: Add fog of war
+   - Track explored areas per player
+   - Render unexplored as black, explored-but-not-visible as gray
+
+#### Data Structure Considerations
+
+```ocaml
+type visibility_state = {
+  visible_tiles : Position.Set.t;
+  explored_tiles : Position.Set.t;
+  visibility_radius : int;
+}
+
+(* Per-player visibility in game state *)
+type t = {
+  players : (Player_id.t, player_data) List.Assoc.t;
+  visibility : (Player_id.t, visibility_state) List.Assoc.t;
+  (* ... *)
+}
+```
+
 ### 2. NPC System
 - **Basic NPCs**: Stationary or wandering creatures
 - **AI Behaviors**:
