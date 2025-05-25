@@ -94,10 +94,10 @@ let%expect_test "client-server communication via pipe transport" =
 
 (** The direct server tests from before still work *)
 let%expect_test "server handles client join directly" =
-  let server_state = Server.Server_state.create () in
-  let connection_state = Server.Connection_state.create () in
+  let server_state = Server_core.Server_state.create () in
+  let connection_state = Server_core.Connection_state.create () in
   let%bind response =
-    Server.handle_request
+    Server_core.handle_request
       server_state
       connection_state
       (Protocol.Request.Join { player_name = "Alice" })

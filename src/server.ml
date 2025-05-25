@@ -5,15 +5,8 @@ open Async
 
 let default_port = 8080
 
-(* Re-export from Server_core for compatibility *)
-module Connection_state = Server_core.Connection_state
-module Server_state = Server_core.Server_state
-
-let handle_request = Server_core.handle_request
-let create_implementations = Server_core.create_implementations
-
 let start_server ~port =
-  let server_state = Server_state.create () in
+  let server_state = Server_core.Server_state.create () in
   printf "Starting game server on port %d\n%!" port;
   let%bind server =
     Tcp.Server.create
