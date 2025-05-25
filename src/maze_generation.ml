@@ -5,35 +5,34 @@ module Config = struct
     { width : int
     ; height : int
     }
+  [@@deriving sexp]
 
   let default = { width = 21; height = 21 }
 
   let create ~width ~height =
     if width % 2 = 0 || height % 2 = 0
-    then failwith "Maze dimensions must be odd"
+    then Or_error.error_string "Maze dimensions must be odd"
     else if width < 5 || height < 5
-    then failwith "Maze dimensions must be at least 5x5"
-    else { width; height }
+    then Or_error.error_string "Maze dimensions must be at least 5x5"
+    else Ok { width; height }
   ;;
+
+  let width t = t.width
+  let height t = t.height
 end
 
 (** Direction for maze carving *)
 module Position = Protocol.Position
 
-module Direction = struct
-  type t =
-    | North
-    | South
-    | East
-    | West
+module Direction_helpers = struct
+  open Protocol.Direction
 
-  let all = [ North; South; East; West ]
+  let all = [ Up; Down; Left; Right ]
 
-  let move pos = function
-    | North -> Position.{ x = pos.Position.x; y = pos.Position.y - 2 }
-    | South -> Position.{ x = pos.Position.x; y = pos.Position.y + 2 }
-    | East -> Position.{ x = pos.Position.x + 2; y = pos.Position.y }
-    | West -> Position.{ x = pos.Position.x - 2; y = pos.Position.y }
+  (* Move 2 cells in the given direction for maze carving *)
+  let move_2 pos dir =
+    let dx, dy = to_delta dir in
+    Position.{ x = pos.Position.x + (2 * dx); y = pos.Position.y + (2 * dy) }
   ;;
 
   let wall_between from to_pos =
@@ -45,7 +44,8 @@ module Direction = struct
 end
 
 let generate ~config ~seed =
-  let { Config.width; height } = config in
+  let width = Config.width config in
+  let height = Config.height config in
   Random.init seed;
   (* Start with all walls *)
   let walls = ref Position.Set.empty in
@@ -70,9 +70,9 @@ let generate ~config ~seed =
     walls := Set.remove !walls pos;
     (* Get unvisited neighbors in random order *)
     let neighbors =
-      Direction.all
+      Direction_helpers.all
       |> List.filter_map ~f:(fun dir ->
-        let next = Direction.move pos dir in
+        let next = Direction_helpers.move_2 pos dir in
         if is_valid_cell next && not (Set.mem !visited next)
         then Some (dir, next)
         else None)
@@ -83,7 +83,7 @@ let generate ~config ~seed =
       if not (Set.mem !visited next)
       then (
         (* Remove wall between current and next *)
-        let wall = Direction.wall_between pos next in
+        let wall = Direction_helpers.wall_between pos next in
         walls := Set.remove !walls wall;
         (* Recursively carve from the neighbor *)
         carve_from next))

@@ -7,17 +7,20 @@ open! Core
     The recursive backtracker creates perfect mazes (no loops) with long, winding
     passages. Every location is reachable with exactly one path between any two points. *)
 module Config : sig
-  type t =
-    { width : int (** Width of the maze (must be odd, >= 5) *)
-    ; height : int (** Height of the maze (must be odd, >= 5) *)
-    }
+  type t [@@deriving sexp]
 
   (** Default configuration: 21x21 maze *)
   val default : t
 
-  (** Create a configuration with the given dimensions. Raises if width or height is even
-      or less than 5. *)
-  val create : width:int -> height:int -> t
+  (** Create a configuration with the given dimensions. Returns an error if width or
+      height is even or less than 5. *)
+  val create : width:int -> height:int -> t Or_error.t
+
+  (** Get the width of the maze *)
+  val width : t -> int
+
+  (** Get the height of the maze *)
+  val height : t -> int
 end
 
 (** Generate a maze with the given configuration.
