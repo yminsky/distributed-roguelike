@@ -106,9 +106,13 @@ let render_loop client =
       | Some player -> player.position
       | None -> Protocol.Position.{ x = 0; y = 0 }
     in
+    let width, height = Notty_async.Term.size client.term in
+    (* Reserve 2 lines for status display at bottom *)
+    let view_height = max 5 (height - 2) in
+    let view_width = max 10 width in
     let world_view =
       Display.World_view.
-        { players = client.all_players; center_pos; view_width = 60; view_height = 20 }
+        { players = client.all_players; center_pos; view_width; view_height }
     in
     let ui = Display.render_ui world_view in
     let%bind () = Notty_async.Term.image client.term ui in
