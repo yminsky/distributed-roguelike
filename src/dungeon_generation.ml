@@ -1,0 +1,184 @@
+open! Core
+open! Import
+
+module Config = struct
+  type t =
+    { width : int
+    ; height : int
+    ; room_attempts : int
+    ; min_room_size : int
+    ; max_room_size : int
+    }
+  [@@deriving sexp]
+
+  let default =
+    { width = 50; height = 50; room_attempts = 30; min_room_size = 4; max_room_size = 10 }
+  ;;
+
+  let create ~width ~height ~room_attempts ~min_room_size ~max_room_size =
+    if width < 20
+    then Or_error.error_string "Dungeon width must be at least 20"
+    else if height < 20
+    then Or_error.error_string "Dungeon height must be at least 20"
+    else if room_attempts <= 0
+    then Or_error.error_string "Room attempts must be positive"
+    else if min_room_size < 3
+    then Or_error.error_string "Minimum room size must be at least 3"
+    else if max_room_size <= min_room_size
+    then Or_error.error_string "Maximum room size must be greater than minimum room size"
+    else Ok { width; height; room_attempts; min_room_size; max_room_size }
+  ;;
+
+  let width t = t.width
+  let height t = t.height
+  let room_attempts t = t.room_attempts
+  let min_room_size t = t.min_room_size
+  let max_room_size t = t.max_room_size
+end
+
+module Room = struct
+  type t =
+    { x : int
+    ; y : int
+    ; width : int
+    ; height : int
+    }
+
+  (** Check if two rooms overlap (including a 1-tile border) *)
+  let overlaps r1 r2 =
+    let r1_right = r1.x + r1.width in
+    let r1_bottom = r1.y + r1.height in
+    let r2_right = r2.x + r2.width in
+    let r2_bottom = r2.y + r2.height in
+    (* Add 1 tile border to prevent rooms from touching *)
+    not
+      (r1_right + 1 < r2.x
+       || r2_right + 1 < r1.x
+       || r1_bottom + 1 < r2.y
+       || r2_bottom + 1 < r1.y)
+  ;;
+
+  (** Get the center position of a room *)
+  let center room =
+    let cx = room.x + (room.width / 2) in
+    let cy = room.y + (room.height / 2) in
+    Position.{ x = cx; y = cy }
+  ;;
+
+  (** Get all floor positions in a room *)
+  let floor_positions room =
+    let positions = ref [] in
+    for x = room.x to room.x + room.width - 1 do
+      for y = room.y to room.y + room.height - 1 do
+        positions := Position.{ x; y } :: !positions
+      done
+    done;
+    !positions
+  ;;
+end
+
+(** Create an L-shaped corridor between two positions *)
+let create_corridor ~from ~(to_ : position) =
+  let positions = ref [] in
+  let x1, y1 = from.x, from.y in
+  let x2, y2 = to_.x, to_.y in
+  (* Randomly choose whether to go horizontal-first or vertical-first *)
+  let go_horizontal_first = Random.bool () in
+  if go_horizontal_first
+  then (
+    (* Horizontal first *)
+    let dx = if x2 > x1 then 1 else -1 in
+    let x = ref x1 in
+    while !x <> x2 do
+      positions := Position.{ x = !x; y = y1 } :: !positions;
+      x := !x + dx
+    done;
+    (* Then vertical *)
+    let dy = if y2 > y1 then 1 else -1 in
+    let y = ref y1 in
+    while !y <> y2 do
+      positions := Position.{ x = x2; y = !y } :: !positions;
+      y := !y + dy
+    done)
+  else (
+    (* Vertical first *)
+    let dy = if y2 > y1 then 1 else -1 in
+    let y = ref y1 in
+    while !y <> y2 do
+      positions := Position.{ x = x1; y = !y } :: !positions;
+      y := !y + dy
+    done;
+    (* Then horizontal *)
+    let dx = if x2 > x1 then 1 else -1 in
+    let x = ref x1 in
+    while !x <> x2 do
+      positions := Position.{ x = !x; y = y2 } :: !positions;
+      x := !x + dx
+    done);
+  positions := Position.{ x = x2; y = y2 } :: !positions;
+  !positions
+;;
+
+let generate ~config ~seed =
+  let width = Config.width config in
+  let height = Config.height config in
+  let room_attempts = Config.room_attempts config in
+  let min_room_size = Config.min_room_size config in
+  let max_room_size = Config.max_room_size config in
+  Random.init seed;
+  (* Start with all walls *)
+  let walls = ref Position.Set.empty in
+  for x = 0 to width - 1 do
+    for y = 0 to height - 1 do
+      walls := Set.add !walls Position.{ x; y }
+    done
+  done;
+  (* Place rooms *)
+  let rooms = ref [] in
+  for _ = 1 to room_attempts do
+    let room_width = min_room_size + Random.int (max_room_size - min_room_size + 1) in
+    let room_height = min_room_size + Random.int (max_room_size - min_room_size + 1) in
+    let room_x = 1 + Random.int (width - room_width - 1) in
+    let room_y = 1 + Random.int (height - room_height - 1) in
+    let new_room =
+      Room.{ x = room_x; y = room_y; width = room_width; height = room_height }
+    in
+    (* Check if it overlaps with existing rooms *)
+    let overlaps_any = List.exists !rooms ~f:(fun room -> Room.overlaps new_room room) in
+    if not overlaps_any
+    then (
+      rooms := new_room :: !rooms;
+      (* Carve out the room *)
+      List.iter (Room.floor_positions new_room) ~f:(fun pos ->
+        walls := Set.remove !walls pos))
+  done;
+  (* Connect rooms with corridors *)
+  (* Use a simple approach: connect each room to the next one in the list *)
+  (* This guarantees connectivity *)
+  let rec connect_rooms = function
+    | [] | [ _ ] -> ()
+    | room1 :: room2 :: rest ->
+      let center1 = Room.center room1 in
+      let center2 = Room.center room2 in
+      let corridor = create_corridor ~from:center1 ~to_:center2 in
+      List.iter corridor ~f:(fun pos -> walls := Set.remove !walls pos);
+      connect_rooms (room2 :: rest)
+  in
+  (* Additionally, add some random connections for variety *)
+  if List.length !rooms > 2
+  then (
+    let rooms_array = Array.of_list !rooms in
+    let num_extra_connections = Random.int (List.length !rooms / 3) + 1 in
+    for _ = 1 to num_extra_connections do
+      let idx1 = Random.int (Array.length rooms_array) in
+      let idx2 = Random.int (Array.length rooms_array) in
+      if idx1 <> idx2
+      then (
+        let center1 = Room.center rooms_array.(idx1) in
+        let center2 = Room.center rooms_array.(idx2) in
+        let corridor = create_corridor ~from:center1 ~to_:center2 in
+        List.iter corridor ~f:(fun pos -> walls := Set.remove !walls pos))
+    done);
+  connect_rooms !rooms;
+  !walls
+;;

@@ -108,7 +108,10 @@ let%expect_test "create config with valid dimensions" =
     printf "Error: %s\n" (Error.to_string_hum err);
     [%expect.unreachable];
     [%expect.unreachable];
-    [%expect {| Created config: 7x7 |}]
+    [%expect.unreachable];
+    [%expect.unreachable];
+  [%expect.unreachable];
+  [%expect {| Created config: 7x7 |}]
 ;;
 
 let%expect_test "create config with even dimensions fails" =
