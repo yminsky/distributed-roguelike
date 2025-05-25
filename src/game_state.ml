@@ -55,24 +55,27 @@ let add_player t ~player_id ~player_name =
         Protocol.Player.{ id = player_id; position; name = player_name; sigil }
       in
       let players =
-        (player_id, player) :: List.Assoc.remove t.players player_id ~equal:String.equal
+        (player_id, player)
+        :: List.Assoc.remove t.players player_id ~equal:Protocol.Player_id.equal
       in
       Ok ({ t with players }, player))
 ;;
 
 let remove_player t ~player_id =
-  { t with players = List.Assoc.remove t.players player_id ~equal:String.equal }
+  { t with
+    players = List.Assoc.remove t.players player_id ~equal:Protocol.Player_id.equal
+  }
 ;;
 
 let move_player t ~player_id ~(direction : Protocol.Direction.t) =
-  match List.Assoc.find t.players player_id ~equal:String.equal with
+  match List.Assoc.find t.players player_id ~equal:Protocol.Player_id.equal with
   | None -> Error "Player not found"
   | Some player ->
     let new_pos = Protocol.Direction.apply_to_position direction player.position in
     (* Check for collisions with other players *)
     let collision =
       List.exists t.players ~f:(fun (other_id, other_player) ->
-        (not (String.equal other_id player_id))
+        (not (Protocol.Player_id.equal other_id player_id))
         && Protocol.Position.equal other_player.position new_pos)
     in
     if collision
@@ -81,13 +84,16 @@ let move_player t ~player_id ~(direction : Protocol.Direction.t) =
       let updated_player = { player with position = new_pos } in
       let players =
         (player_id, updated_player)
-        :: List.Assoc.remove t.players player_id ~equal:String.equal
+        :: List.Assoc.remove t.players player_id ~equal:Protocol.Player_id.equal
       in
       Ok { t with players })
 ;;
 
 let get_players t = List.map t.players ~f:(fun (_, player) -> player)
-let get_player t ~player_id = List.Assoc.find t.players player_id ~equal:String.equal
+
+let get_player t ~player_id =
+  List.Assoc.find t.players player_id ~equal:Protocol.Player_id.equal
+;;
 
 (* Key mapping for client controls *)
 let key_to_action : Protocol.Key_input.t -> Protocol.Direction.t option = function

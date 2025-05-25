@@ -38,7 +38,9 @@ module Server_state = struct
   ;;
 
   let add_player t ~player_name =
-    let player_id = Printf.sprintf "player_%d" t.next_player_id in
+    let player_id =
+      Protocol.Player_id.create (Printf.sprintf "player_%d" t.next_player_id)
+    in
     t.next_player_id <- t.next_player_id + 1;
     match Game_state.add_player t.game_state ~player_id ~player_name with
     | Ok (new_game_state, player) ->
@@ -77,7 +79,10 @@ let handle_request server_state connection_state request =
     (match Server_state.add_player server_state ~player_name with
      | Ok player ->
        connection_state.Connection_state.player_id <- Some player.id;
-       printf "Player %s (%s) joined\n%!" player.name player.id;
+       printf
+         "Player %s (%s) joined\n%!"
+         player.name
+         (Protocol.Player_id.to_string player.id);
        return Protocol.Response.Ok
      | Error msg ->
        printf "Join failed: %s\n%!" msg;
@@ -90,7 +95,7 @@ let handle_request server_state connection_state request =
         | Ok () ->
           printf
             "Player %s moved %s\n%!"
-            player_id
+            (Protocol.Player_id.to_string player_id)
             (Protocol.Direction.to_string direction);
           return Protocol.Response.Ok
         | Error msg ->
@@ -102,7 +107,7 @@ let handle_request server_state connection_state request =
      | Some player_id ->
        let _ = Server_state.remove_player server_state ~player_id in
        connection_state.Connection_state.player_id <- None;
-       printf "Player %s left\n%!" player_id;
+       printf "Player %s left\n%!" (Protocol.Player_id.to_string player_id);
        return Protocol.Response.Ok)
 ;;
 
@@ -110,7 +115,7 @@ let handle_state_rpc server_state connection_state connection =
   let your_id =
     match connection_state.Connection_state.player_id with
     | Some id -> id
-    | None -> "" (* Not joined yet *)
+    | None -> Protocol.Player_id.create "" (* Not joined yet *)
   in
   let initial_state =
     Protocol.Initial_state.
@@ -168,6 +173,6 @@ let serve_with_transport server_state (transport : Rpc.Transport.t) =
      | None -> ()
      | Some player_id ->
        ignore (Server_state.remove_player server_state ~player_id : bool);
-       printf "Player %s disconnected\n%!" player_id);
+       printf "Player %s disconnected\n%!" (Protocol.Player_id.to_string player_id));
     return ()
 ;;

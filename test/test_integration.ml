@@ -47,7 +47,7 @@ let test_client_server_with_pipe_transport () =
   in
   printf
     "Got initial state. Your ID: %s, Players: %d\n"
-    initial_state.your_id
+    (Protocol.Player_id.to_string initial_state.your_id)
     (List.length initial_state.all_players);
   (* Test: Move player *)
   let%bind move_result =
@@ -67,7 +67,11 @@ let test_client_server_with_pipe_transport () =
    | `Ok update ->
      (match update with
       | Protocol.Update.Player_moved { player_id; new_position } ->
-        printf "Player %s moved to (%d, %d)\n" player_id new_position.x new_position.y
+        printf
+          "Player %s moved to (%d, %d)\n"
+          (Protocol.Player_id.to_string player_id)
+          new_position.x
+          new_position.y
       | _ -> printf "Got other update\n"));
   (* Clean up *)
   let%bind () = Async_rpc_kernel.Rpc.Connection.close client_conn in
@@ -106,7 +110,7 @@ let%expect_test "server handles client join directly" =
    | Protocol.Response.Ok ->
      printf "Join successful\n";
      (match connection_state.player_id with
-      | Some id -> printf "Player ID set to: %s\n" id
+      | Some id -> printf "Player ID set to: %s\n" (Protocol.Player_id.to_string id)
       | None -> printf "Error: Player ID not set\n")
    | Protocol.Response.Error msg -> printf "Join failed: %s\n" msg);
   [%expect

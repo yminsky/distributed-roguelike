@@ -60,6 +60,9 @@ end
 
 module Player_id = struct
   type t = string [@@deriving sexp, bin_io, compare, equal]
+
+  let create s = s
+  let to_string t = t
 end
 
 module Player = struct

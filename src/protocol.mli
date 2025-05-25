@@ -38,7 +38,10 @@ module Key_input : sig
 end
 
 module Player_id : sig
-  type t = string [@@deriving sexp, bin_io, compare, equal]
+  type t [@@deriving sexp, bin_io, compare, equal]
+
+  val create : string -> t
+  val to_string : t -> string
 end
 
 module Player : sig
