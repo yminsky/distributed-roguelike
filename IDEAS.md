@@ -182,29 +182,33 @@ The game framework needs to:
 
 Interactions could be modeled as:
 
-TODO: I'm not convinced of this idea, really. I don't know that we
-need a "response" type.  I think we could have one type, which is a
-thing that a PC or an NPC can do, either to another PC or another NPC.
-Given that both NPCs and PCs are essentially autonomous, wy not a
-single action type?
-
 ```ocaml
-(* TODO: Even here, every type should be called t, and should be
-   contained within a mdoule with a meaningful name *)
-type interaction_request =
-  | Talk
-  | Trade
-  | Attack of { damage : int }
-  | Give_item of Item.t
+module Action = struct
+  type t =
+    | Move of Position.t
+    | Attack of { target : Entity_id.t; damage : int }
+    | Speak of { message : string; target : Entity_id.t option }
+    | Trade of { items : Item.t list; target : Entity_id.t }
+    | Give_item of { item : Item.t; target : Entity_id.t }
+    | Use_item of Item.t
+    | Pick_up of Item_id.t
+    | Wait
+end
 
-type interaction_response =
-  | Dialogue of string list  (* Lines of dialogue *)
-  | Trade_window of { items : Item.t list; prices : (Item.t * int) list }
-  | Combat_reaction of { counter_damage : int option }
-  | Accept_item
-  | Refuse of string  (* Reason for refusal *)
-  | No_response
+module Entity_id = struct
+  type t =
+    | Player of Player_id.t
+    | Npc of Npc_id.t
+end
 ```
+
+This unification has several advantages:
+- Both PCs and NPCs can perform the same actions
+- Simpler to implement and reason about
+- Makes NPCs feel more like "real" participants in the world
+- Easier to add new actions that work for both entity types
+- Could even allow for interesting mechanics like mind control or
+  possession where a player controls an NPC
 
 **Option 1: First-Class Module Approach (Revised)**
 
