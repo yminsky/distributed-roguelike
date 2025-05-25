@@ -23,9 +23,9 @@ module Config : sig
     -> max_room_size:int (** Maximum room dimension (must be > min_room_size) *)
     -> t Or_error.t
 
-  (** Accessor functions *)
-  val width : t -> int
+  (** {2 Accessor functions} *)
 
+  val width : t -> int
   val height : t -> int
   val room_attempts : t -> int
   val min_room_size : t -> int
