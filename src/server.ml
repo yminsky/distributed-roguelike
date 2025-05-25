@@ -27,9 +27,6 @@ let start_server ~port =
   Tcp.Server.close_finished server
 ;;
 
-(* TODO: this function is unnecessary *)
-let main_loop ~port = start_server ~port
-
 let command =
   let open Command.Let_syntax in
   Command.async
@@ -41,5 +38,5 @@ let command =
           (optional_with_default default_port int)
           ~doc:(Printf.sprintf "PORT Server port (default: %d)" default_port)
       in
-      fun () -> main_loop ~port]
+      fun () -> start_server ~port]
 ;;
