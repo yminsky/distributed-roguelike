@@ -98,37 +98,28 @@ let%expect_test "same seed produces same maze" =
 ;;
 
 let%expect_test "create config with valid dimensions" =
-  match Maze_generation.Config.create ~width:7 ~height:7 with
-  | Ok config ->
-    printf
-      "Created config: %dx%d\n"
-      (Maze_generation.Config.width config)
-      (Maze_generation.Config.height config)
-  | Error err ->
-    printf "Error: %s\n" (Error.to_string_hum err);
-    [%expect.unreachable];
-    [%expect.unreachable];
-    [%expect.unreachable];
-    [%expect.unreachable];
-    [%expect.unreachable];
-    [%expect.unreachable];
-    [%expect {| Created config: 7x7 |}]
+  (match Maze_generation.Config.create ~width:7 ~height:7 with
+   | Ok config ->
+     printf
+       "Created config: %dx%d\n"
+       (Maze_generation.Config.width config)
+       (Maze_generation.Config.height config)
+   | Error err -> printf "Error: %s\n" (Error.to_string_hum err));
+  [%expect {| Created config: 7x7 |}]
 ;;
 
 let%expect_test "create config with even dimensions fails" =
-  match Maze_generation.Config.create ~width:8 ~height:7 with
-  | Ok _ -> printf "Unexpected success\n"
-  | Error err ->
-    printf "Error: %s\n" (Error.to_string_hum err);
-    [%expect {| Error: Maze dimensions must be odd |}]
+  (match Maze_generation.Config.create ~width:8 ~height:7 with
+   | Ok _ -> printf "Unexpected success\n"
+   | Error err -> printf "Error: %s\n" (Error.to_string_hum err));
+  [%expect {| Error: Maze dimensions must be odd |}]
 ;;
 
 let%expect_test "create config with too small dimensions fails" =
-  match Maze_generation.Config.create ~width:3 ~height:3 with
-  | Ok _ -> printf "Unexpected success\n"
-  | Error err ->
-    printf "Error: %s\n" (Error.to_string_hum err);
-    [%expect {| Error: Maze dimensions must be at least 5x5 |}]
+  (match Maze_generation.Config.create ~width:3 ~height:3 with
+   | Ok _ -> printf "Unexpected success\n"
+   | Error err -> printf "Error: %s\n" (Error.to_string_hum err));
+  [%expect {| Error: Maze dimensions must be at least 5x5 |}]
 ;;
 
 let%expect_test "small maze generation" =

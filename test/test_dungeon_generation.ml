@@ -83,58 +83,52 @@ let%expect_test "dungeon has continuous border" =
 ;;
 
 let%expect_test "create config with valid parameters" =
-  match
-    Dungeon_generation.Config.create
-      ~width:40
-      ~height:40
-      ~room_attempts:20
-      ~min_room_size:3
-      ~max_room_size:8
-  with
-  | Ok config ->
-    printf
-      "Created config: %dx%d, attempts=%d, room_size=%d-%d\n"
-      (Dungeon_generation.Config.width config)
-      (Dungeon_generation.Config.height config)
-      (Dungeon_generation.Config.room_attempts config)
-      (Dungeon_generation.Config.min_room_size config)
-      (Dungeon_generation.Config.max_room_size config)
-  | Error err ->
-    printf "Error: %s\n" (Error.to_string_hum err);
-    [%expect.unreachable];
-    [%expect.unreachable];
-    [%expect.unreachable];
-    [%expect {| Created config: 40x40, attempts=20, room_size=3-8 |}]
+  (match
+     Dungeon_generation.Config.create
+       ~width:40
+       ~height:40
+       ~room_attempts:20
+       ~min_room_size:3
+       ~max_room_size:8
+   with
+   | Ok config ->
+     printf
+       "Created config: %dx%d, attempts=%d, room_size=%d-%d\n"
+       (Dungeon_generation.Config.width config)
+       (Dungeon_generation.Config.height config)
+       (Dungeon_generation.Config.room_attempts config)
+       (Dungeon_generation.Config.min_room_size config)
+       (Dungeon_generation.Config.max_room_size config)
+   | Error err -> printf "Error: %s\n" (Error.to_string_hum err));
+  [%expect {| Created config: 40x40, attempts=20, room_size=3-8 |}]
 ;;
 
 let%expect_test "create config with invalid width" =
-  match
-    Dungeon_generation.Config.create
-      ~width:10
-      ~height:40
-      ~room_attempts:20
-      ~min_room_size:3
-      ~max_room_size:8
-  with
-  | Ok _ -> printf "Unexpected success\n"
-  | Error err ->
-    printf "Error: %s\n" (Error.to_string_hum err);
-    [%expect {| Error: Dungeon width must be at least 20 |}]
+  (match
+     Dungeon_generation.Config.create
+       ~width:10
+       ~height:40
+       ~room_attempts:20
+       ~min_room_size:3
+       ~max_room_size:8
+   with
+   | Ok _ -> printf "Unexpected success\n"
+   | Error err -> printf "Error: %s\n" (Error.to_string_hum err));
+  [%expect {| Error: Dungeon width must be at least 20 |}]
 ;;
 
 let%expect_test "create config with invalid room size" =
-  match
-    Dungeon_generation.Config.create
-      ~width:40
-      ~height:40
-      ~room_attempts:20
-      ~min_room_size:5
-      ~max_room_size:4
-  with
-  | Ok _ -> printf "Unexpected success\n"
-  | Error err ->
-    printf "Error: %s\n" (Error.to_string_hum err);
-    [%expect {| Error: Maximum room size must be greater than minimum room size |}]
+  (match
+     Dungeon_generation.Config.create
+       ~width:40
+       ~height:40
+       ~room_attempts:20
+       ~min_room_size:5
+       ~max_room_size:4
+   with
+   | Ok _ -> printf "Unexpected success\n"
+   | Error err -> printf "Error: %s\n" (Error.to_string_hum err));
+  [%expect {| Error: Maximum room size must be greater than minimum room size |}]
 ;;
 
 let%expect_test "small dungeon generation" =
