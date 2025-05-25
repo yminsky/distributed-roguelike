@@ -27,16 +27,23 @@
 
 **Design Philosophy**
 
-Before diving into implementation details, let's consider what NPCs fundamentally need to do in our game:
+Before diving into implementation details, let's consider what NPCs
+fundamentally need to do in our game:
 
-1. **Exist in Space**: NPCs occupy positions in the game world and need to move around
-2. **Make Decisions**: NPCs need to decide what to do each turn based on game state
-3. **Be Interactable**: Players can interact with NPCs in various ways (combat, dialogue, trading)
-4. **Have State**: NPCs need to track their own state (health, inventory, conversation flags)
+1. **Exist in Space**: NPCs occupy positions in the game world and
+   need to move around
+2. **Make Decisions**: NPCs need to decide what to do each turn based
+   on game state
+3. **Be Interactable**: Players can interact with NPCs in various ways
+   (combat, dialogue, trading)
+4. **Have State**: NPCs need to track their own state (health,
+   inventory, conversation flags)
 5. **Be Persistent**: NPCs should survive across game sessions
 
 The game framework needs to:
-- Know where each NPC is located (for rendering and collision detection)
+
+- Know where each NPC is located (for rendering and collision
+  detection)
 - Update NPC states each turn (movement, actions)
 - Handle player-NPC interactions
 - Remove dead NPCs from the game
@@ -46,8 +53,16 @@ The game framework needs to:
 
 Interactions could be modeled as:
 
+TODO: I'm not convinced of this idea, really. I don't know that we
+need a "response" type.  I think we could have one type, which is a
+thing that a PC or an NPC can do, either to another PC or another NPC.
+Given that both NPCs and PCs are essentially autonomous, wy not a
+single action type?
+
 ```ocaml
-type interaction_request = 
+(* TODO: Even here, every type should be called t, and should be
+   contained within a mdoule with a meaningful name *)
+type interaction_request =
   | Talk
   | Trade
   | Attack of { damage : int }
@@ -78,7 +93,7 @@ module type NPC = sig
 
   (* Core behavior *)
   val think : t -> game_state -> Npc_action.t
-  
+
   (* State updates - return None if NPC dies *)
   val update : t -> Npc_update.t -> t option
   val interact : t -> Player_id.t -> interaction_request -> t * interaction_response
@@ -86,7 +101,7 @@ end
 
 (* Where updates could be: *)
 module Npc_update = struct
-  type t = 
+  type t =
     | Move_to of Position.t
     | Take_damage of int
     | Heal of int
