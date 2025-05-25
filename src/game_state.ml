@@ -13,21 +13,21 @@ let create_test_maze_walls () =
   (* Create a simple test maze with a central room and corridors
      The spawn point at (0,0) is guaranteed to be in the central room *)
   let walls = ref [] in
-  (* Create a box from (-5,-3) to (5,3) with an opening *)
-  for x = -5 to 5 do
+  (* Create a square box from (-3,-3) to (3,3) *)
+  for x = -3 to 3 do
     walls := Protocol.Position.{ x; y = -3 } :: !walls;
     walls := Protocol.Position.{ x; y = 3 } :: !walls
   done;
   for y = -2 to 2 do
-    walls := Protocol.Position.{ x = -5; y } :: !walls;
-    walls := Protocol.Position.{ x = 5; y } :: !walls
+    walls := Protocol.Position.{ x = -3; y } :: !walls;
+    walls := Protocol.Position.{ x = 3; y } :: !walls
   done;
   (* Remove some walls to create openings *)
   let walls_set = Set.of_list (module Protocol.Position) !walls in
   let walls_set = Set.remove walls_set Protocol.Position.{ x = 0; y = -3 } in
   let walls_set = Set.remove walls_set Protocol.Position.{ x = 0; y = 3 } in
-  let walls_set = Set.remove walls_set Protocol.Position.{ x = -5; y = 0 } in
-  let walls_set = Set.remove walls_set Protocol.Position.{ x = 5; y = 0 } in
+  let walls_set = Set.remove walls_set Protocol.Position.{ x = -3; y = 0 } in
+  let walls_set = Set.remove walls_set Protocol.Position.{ x = 3; y = 0 } in
   Set.to_list walls_set
 ;;
 

@@ -15,16 +15,8 @@ let line_between ~from ~to_pos =
     then List.rev acc
     else (
       let e2 = 2 * err in
-      let err, x =
-        if e2 > -dy
-        then err - dy, x + sx
-        else err, x
-      in
-      let err, y =
-        if e2 < dx
-        then err + dx, y + sy
-        else err, y
-      in
+      let err, x = if e2 > -dy then err - dy, x + sx else err, x in
+      let err, y = if e2 < dx then err + dx, y + sy else err, y in
       loop x y err acc)
   in
   loop x0 y0 (dx - dy) []
