@@ -70,6 +70,11 @@ When implementing already-designed interfaces:
   the interfaces right before diving into implementation. This helps catch
   design issues early and makes the codebase more maintainable.
 
+- **Use `include functor` syntax**: When including Jane Street functors like
+  `Comparable.Make`, use the concise `include functor Comparable.Make` syntax
+  instead of manually creating a module argument. This feature automatically
+  uses the surrounding module's type `t` and derived functions.
+
 ## Architecture
 
 The codebase follows a clean separation between networking, game

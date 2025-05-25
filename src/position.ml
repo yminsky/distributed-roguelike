@@ -6,9 +6,7 @@ type t =
   }
 [@@deriving sexp, bin_io, compare, equal]
 
-include Comparable.Make (struct
-    type nonrec t = t [@@deriving sexp, compare]
-  end)
+include functor Comparable.Make
 
 module Export = struct
   type position = t =
