@@ -6,7 +6,7 @@
 - **Wall Representation**: Add wall tiles to the game state
   - Could use a 2D array or sparse representation for walls
   - Need collision detection to prevent walking through walls
-- **Visibility System**: 
+- **Visibility System**:
   - Ray-casting or shadow-casting algorithms for line-of-sight
   - Only render tiles visible from player's position
   - Consider "fog of war" for previously seen areas
@@ -17,7 +17,7 @@
 
 ### 2. NPC System
 - **Basic NPCs**: Stationary or wandering creatures
-- **AI Behaviors**: 
+- **AI Behaviors**:
   - Pathfinding (A* for intelligent movement)
   - Different behavior patterns (aggressive, passive, fleeing)
 - **Combat System**: Turn-based or real-time interactions
@@ -25,34 +25,93 @@
 
 #### NPC Architecture Design
 
-**Option 1: First-Class Module Approach**
+**Design Philosophy**
+
+Before diving into implementation details, let's consider what NPCs fundamentally need to do in our game:
+
+1. **Exist in Space**: NPCs occupy positions in the game world and need to move around
+2. **Make Decisions**: NPCs need to decide what to do each turn based on game state
+3. **Be Interactable**: Players can interact with NPCs in various ways (combat, dialogue, trading)
+4. **Have State**: NPCs need to track their own state (health, inventory, conversation flags)
+5. **Be Persistent**: NPCs should survive across game sessions
+
+The game framework needs to:
+- Know where each NPC is located (for rendering and collision detection)
+- Update NPC states each turn (movement, actions)
+- Handle player-NPC interactions
+- Remove dead NPCs from the game
+- Serialize/deserialize NPC state
+
+**Interaction System**
+
+Interactions could be modeled as:
+
+```ocaml
+type interaction_request = 
+  | Talk
+  | Trade
+  | Attack of { damage : int }
+  | Give_item of Item.t
+
+type interaction_response =
+  | Dialogue of string list  (* Lines of dialogue *)
+  | Trade_window of { items : Item.t list; prices : (Item.t * int) list }
+  | Combat_reaction of { counter_damage : int option }
+  | Accept_item
+  | Refuse of string  (* Reason for refusal *)
+  | No_response
+```
+
+**Option 1: First-Class Module Approach (Revised)**
+
+Based on the fundamental needs, here's a minimal interface:
 
 ```ocaml
 module type NPC = sig
-  type t
-  
-  (* Core identification *)
+  type t [@@deriving sexp]
+
+  (* Essential queries the framework needs *)
   val id : t -> Npc_id.t
-  val name : t -> string
-  val sigil : t -> char
-  
-  (* State and position *)
   val position : t -> Position.t
-  val health : t -> int
-  val max_health : t -> int
-  
-  (* Behavior - returns desired action given game state *)
+  val is_alive : t -> bool
+  val sigil : t -> char  (* For rendering *)
+
+  (* Core behavior *)
   val think : t -> game_state -> Npc_action.t
   
-  (* State updates *)
-  val move_to : t -> Position.t -> t
-  val take_damage : t -> int -> t
-  val interact_with_player : t -> Player_id.t -> t * Interaction_result.t
-  
-  (* Serialization *)
-  val to_sexp : t -> Sexp.t
-  val of_sexp : Sexp.t -> t
+  (* State updates - return None if NPC dies *)
+  val update : t -> Npc_update.t -> t option
+  val interact : t -> Player_id.t -> interaction_request -> t * interaction_response
 end
+
+(* Where updates could be: *)
+module Npc_update = struct
+  type t = 
+    | Move_to of Position.t
+    | Take_damage of int
+    | Heal of int
+    | Time_passed  (* For any time-based state changes *)
+end
+```
+
+This minimal interface focuses on what the framework absolutely needs while keeping NPC internals private.
+
+**Option 1b: Even Simpler Functional Approach**
+
+```ocaml
+(* NPCs as pure data with external behavior functions *)
+type npc = {
+  id : Npc_id.t;
+  kind : Npc_kind.t;
+  position : Position.t;
+  health : int;
+  internal_state : Sexp.t;  (* Opaque state for each NPC type *)
+} [@@deriving sexp]
+
+(* Behavior is determined by kind *)
+val think : npc -> game_state -> Npc_action.t
+val interact : npc -> Player_id.t -> interaction_request -> npc * interaction_response
+val update : npc -> Npc_update.t -> npc option
 
 (* Then use first-class modules *)
 type npc = (module NPC)
@@ -65,11 +124,11 @@ module Goblin : NPC = struct
     health : int;
     aggro_player : Player_id.t option;
   }
-  
+
   let think t game_state =
     match t.aggro_player with
     | None -> Npc_action.Wander
-    | Some player_id -> 
+    | Some player_id ->
       match find_player game_state player_id with
       | None -> Npc_action.Wander
       | Some player -> Npc_action.Chase player.position
@@ -102,11 +161,11 @@ type npc = {
 
 (* Behaviors can be mixed and matched *)
 module Aggressive_movement : Movement_behavior = struct
-  let get_move state game = 
+  let get_move state game =
     (* Chase nearest player *)
 end
 
-module Merchant_movement : Movement_behavior = struct  
+module Merchant_movement : Movement_behavior = struct
   let get_move state game =
     (* Stay in place or patrol between waypoints *)
 end
@@ -116,7 +175,7 @@ end
 
 ```ocaml
 (* Start simple, refactor later if needed *)
-type npc_kind = 
+type npc_kind =
   | Goblin of { aggro_range : int; damage : int }
   | Merchant of { items : Item.t list; prices : (Item.t * int) list }
   | Guard of { patrol_route : Position.t list; alert_range : int }
