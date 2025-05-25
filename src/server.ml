@@ -133,16 +133,41 @@ let create_implementations server_state =
   [request_impl; state_impl]
 
 let start_server ~port =
-  let _server_state = Server_state.create () in
-  let _implementations = create_implementations _server_state in
+  let server_state = Server_state.create () in
+  let implementations = create_implementations server_state in
   printf "Starting game server on port %d\n%!" port;
   let%bind server = 
     Tcp.Server.create
       ~on_handler_error:`Raise
       (Tcp.Where_to_listen.of_port port)
-      (fun _inet_addr _reader _writer ->
-        printf "Client connected\n%!";
-        return ())
+      (fun inet_addr reader writer ->
+        printf "Client connected from %s\n%!" (Socket.Address.Inet.to_string inet_addr);
+        let connection_state = Connection_state._create () in
+        Rpc.Connection.server_with_close
+          reader
+          writer
+          ~implementations:(Rpc.Implementations.create_exn
+            ~implementations
+            ~on_unknown_rpc:`Close_connection)
+          ~connection_state
+          ~on_handshake_error:`Raise
+        >>= function
+        | Error exn ->
+          printf "RPC connection failed: %s\n%!" (Exn.to_string exn);
+          return ()
+        | Ok rpc_conn ->
+          printf "RPC connection established\n%!";
+          (* Store the connection in the connection state *)
+          connection_state.connection <- Some rpc_conn;
+          (* Clean up when connection closes *)
+          Rpc.Connection.close_finished rpc_conn
+          >>= fun () ->
+          (match connection_state.player_id with
+           | None -> ()
+           | Some player_id ->
+             let _ = Server_state.remove_player server_state ~player_id in
+             printf "Player %s disconnected\n%!" player_id);
+          return ())
   in
   printf "Game server listening on port %d\n%!" port;
   Tcp.Server.close_finished server
