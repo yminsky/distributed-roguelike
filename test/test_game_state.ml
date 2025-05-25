@@ -104,6 +104,101 @@ let%expect_test "key to action conversion" =
     |}]
 ;;
 
+let%expect_test "wall collision detection" =
+  let state = Game_state.create ~use_test_maze:true () in
+  let state, player =
+    match
+      Game_state.add_player
+        state
+        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_name:"Player"
+    with
+    | Ok result -> result
+    | Error _ -> failwith "Failed to add player"
+  in
+  printf "Player spawned at (%d, %d)\n" player.position.x player.position.y;
+  
+  (* Try to move up multiple times to hit a wall *)
+  let rec move_until_wall state direction count =
+    if count > 10 then state
+    else
+      match
+        Game_state.move_player
+          state
+          ~player_id:(Protocol.Player_id.create "player1")
+          ~direction
+      with
+      | Ok (new_state, _) ->
+        printf "Moved %s successfully\n" (Protocol.Direction.to_string direction);
+        move_until_wall new_state direction (count + 1)
+      | Error msg ->
+        printf "Movement blocked: %s\n" msg;
+        state
+  in
+  
+  (* First move right to position (1, 0), then up to hit wall at (1, -3) *)
+  let state = 
+    match
+      Game_state.move_player
+        state
+        ~player_id:(Protocol.Player_id.create "player1")
+        ~direction:Right
+    with
+    | Ok (new_state, _) ->
+      printf "Moved Right successfully\n";
+      new_state
+    | Error msg ->
+      printf "Failed to move right: %s\n" msg;
+      state
+  in
+  
+  (* Now try moving up until we hit the wall at (1, -3) *)
+  let _ = move_until_wall state Up 0 in
+  
+  [%expect {|
+    Player spawned at (0, 0)
+    Moved Right successfully
+    Moved Up successfully
+    Moved Up successfully
+    Movement blocked: Cannot move into a wall
+    |}]
+;;
+
+let%expect_test "visual rendering with walls" =
+  let state = Game_state.create ~use_test_maze:true () in
+  let state, _ =
+    match
+      Game_state.add_player
+        state
+        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_name:"Player"
+    with
+    | Ok result -> result
+    | Error _ -> failwith "Failed to add player"
+  in
+  let render_state state =
+    Notty_test_utils.render_state_to_string
+      ~width:15
+      ~height:9
+      state
+      ~player_id:(Protocol.Player_id.create "player1")
+  in
+  print_endline (render_state state);
+  [%expect {|
+           .
+      #####.#####
+      #    .    #
+      #    .    #
+    .......@.......
+      #    .    #
+      #    .    #
+      #####.#####
+           .
+
+    Center: (0, 0) | Players: 1 | Use WASD to move, Q to quit
+    |}]
+;;
+
 let%expect_test "visual state transitions" =
   let render_state state =
     Notty_test_utils.render_state_to_string

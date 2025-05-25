@@ -9,6 +9,8 @@ module Position : sig
     ; y : int
     }
   [@@deriving sexp, bin_io, compare, equal]
+  
+  include Comparable.S with type t := t
 end
 
 module Direction : sig
@@ -77,6 +79,7 @@ module Initial_state : sig
   type t =
     { your_id : Player_id.t
     ; all_players : Player.t list
+    ; walls : Position.t list
     }
   [@@deriving sexp, bin_io]
 end

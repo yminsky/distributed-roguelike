@@ -8,6 +8,7 @@ type game_client =
   { connection : Rpc.Connection.t
   ; mutable your_id : Protocol.Player_id.t
   ; mutable all_players : Protocol.Player.t list
+  ; mutable walls : Protocol.Position.t list
   ; term : Notty_async.Term.t
   }
 
@@ -127,7 +128,7 @@ let render_loop client =
     let view_width = max 10 width in
     let world_view =
       Display.World_view.
-        { players = client.all_players; center_pos; view_width; view_height }
+        { players = client.all_players; walls = client.walls; center_pos; view_width; view_height }
     in
     let ui = Display.render_ui world_view in
     let%bind () = Notty_async.Term.image client.term ui in
@@ -176,6 +177,7 @@ let connect_to_server ~host ~port ~player_name =
       { connection
       ; your_id = initial_state.your_id
       ; all_players = initial_state.all_players
+      ; walls = initial_state.walls
       ; term
       }
     in

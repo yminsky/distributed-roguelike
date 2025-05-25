@@ -5,6 +5,7 @@ let grid_marker_spacing = 10
 module World_view = struct
   type t =
     { players : Protocol.Player.t list
+    ; walls : Protocol.Position.t list
     ; center_pos : Protocol.Position.t
     ; view_width : int
     ; view_height : int
@@ -13,7 +14,7 @@ end
 
 let render_grid (world_view : World_view.t) =
   let open Notty in
-  let { World_view.center_pos = { x = cx; y = cy }; view_width; view_height; players } =
+  let { World_view.center_pos = { x = cx; y = cy }; view_width; view_height; players; walls } =
     world_view
   in
   let half_width = view_width / 2 in
@@ -22,6 +23,8 @@ let render_grid (world_view : World_view.t) =
   let player_map =
     List.fold players ~init:[] ~f:(fun acc player -> (player.position, player) :: acc)
   in
+  (* Create a set of wall positions for efficient lookup *)
+  let wall_set = Set.of_list (module Protocol.Position) walls in
   let render_empty_cell world_x world_y =
     if world_x mod grid_marker_spacing = 0 || world_y mod grid_marker_spacing = 0
     then '.', A.(fg lightblack) (* Grid markers *)
@@ -32,7 +35,10 @@ let render_grid (world_view : World_view.t) =
     let ch, color =
       match List.Assoc.find player_map world_pos ~equal:Protocol.Position.equal with
       | Some player -> player.sigil, A.(fg lightgreen)
-      | None -> render_empty_cell world_x world_y
+      | None ->
+        if Set.mem wall_set world_pos
+        then '#', A.(fg white) (* Wall character *)
+        else render_empty_cell world_x world_y
     in
     I.(string color (String.of_char ch))
   in

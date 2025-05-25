@@ -5,8 +5,9 @@ open! Core
 
 type t
 
-(** Create empty game state with max_players of 10. *)
-val create : unit -> t
+(** Create empty game state with max_players of 10. 
+    If use_test_maze is true, creates a simple test maze with walls. *)
+val create : ?use_test_maze:bool -> unit -> t
 
 (** Add a new player with unique spawn position and sigil. Returns Error if server is full
     or no sigils available. *)
@@ -28,6 +29,7 @@ val move_player
 
 val get_players : t -> Protocol.Player.t list
 val get_player : t -> player_id:Protocol.Player_id.t -> Protocol.Player.t option
+val get_walls : t -> Protocol.Position.t list
 
 (** Convert keyboard input to movement direction. Returns None for quit keys ('q') or
     unmappable input. *)

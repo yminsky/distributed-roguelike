@@ -6,6 +6,7 @@ module World_view : sig
   (** Configuration for what portion of the game world to render. *)
   type t =
     { players : Protocol.Player.t list
+    ; walls : Protocol.Position.t list
     ; center_pos : Protocol.Position.t (** Position to center the view on *)
     ; view_width : int
     ; view_height : int

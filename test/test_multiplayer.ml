@@ -201,9 +201,10 @@ let%expect_test "visual multi-player rendering" =
   in
   (* Render the world *)
   let players = Game_state.get_players state in
+  let walls = Game_state.get_walls state in
   let world_view =
     Display.World_view.
-      { players; center_pos = { x = 0; y = 0 }; view_width = 15; view_height = 9 }
+      { players; walls; center_pos = { x = 0; y = 0 }; view_width = 15; view_height = 9 }
   in
   let image = Display.render_ui world_view in
   print_endline (Notty_test_utils.render_to_string image);

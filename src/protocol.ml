@@ -2,11 +2,16 @@ open! Core
 open Async
 
 module Position = struct
-  type t =
-    { x : int
-    ; y : int
-    }
-  [@@deriving sexp, bin_io, compare, equal]
+  module T = struct
+    type t =
+      { x : int
+      ; y : int
+      }
+    [@@deriving sexp, bin_io, compare, equal]
+  end
+  
+  include T
+  include Comparable.Make(T)
 end
 
 module Direction = struct
@@ -98,6 +103,7 @@ module Initial_state = struct
   type t =
     { your_id : Player_id.t
     ; all_players : Player.t list
+    ; walls : Position.t list
     }
   [@@deriving sexp, bin_io]
 end
