@@ -110,8 +110,9 @@ let%expect_test "create config with valid dimensions" =
     [%expect.unreachable];
     [%expect.unreachable];
     [%expect.unreachable];
-  [%expect.unreachable];
-  [%expect {| Created config: 7x7 |}]
+    [%expect.unreachable];
+    [%expect.unreachable];
+    [%expect {| Created config: 7x7 |}]
 ;;
 
 let%expect_test "create config with even dimensions fails" =

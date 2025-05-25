@@ -62,7 +62,7 @@ module Room = struct
   let center room =
     let cx = room.x + (room.width / 2) in
     let cy = room.y + (room.height / 2) in
-    Position.{ x = cx; y = cy }
+    { x = cx; y = cy }
   ;;
 
   (** Get all floor positions in a room *)
@@ -70,7 +70,7 @@ module Room = struct
     let positions = ref [] in
     for x = room.x to room.x + room.width - 1 do
       for y = room.y to room.y + room.height - 1 do
-        positions := Position.{ x; y } :: !positions
+        positions := { x; y } :: !positions
       done
     done;
     !positions
@@ -90,14 +90,14 @@ let create_corridor ~from ~(to_ : position) =
     let dx = if x2 > x1 then 1 else -1 in
     let x = ref x1 in
     while !x <> x2 do
-      positions := Position.{ x = !x; y = y1 } :: !positions;
+      positions := { x = !x; y = y1 } :: !positions;
       x := !x + dx
     done;
     (* Then vertical *)
     let dy = if y2 > y1 then 1 else -1 in
     let y = ref y1 in
     while !y <> y2 do
-      positions := Position.{ x = x2; y = !y } :: !positions;
+      positions := { x = x2; y = !y } :: !positions;
       y := !y + dy
     done)
   else (
@@ -105,17 +105,17 @@ let create_corridor ~from ~(to_ : position) =
     let dy = if y2 > y1 then 1 else -1 in
     let y = ref y1 in
     while !y <> y2 do
-      positions := Position.{ x = x1; y = !y } :: !positions;
+      positions := { x = x1; y = !y } :: !positions;
       y := !y + dy
     done;
     (* Then horizontal *)
     let dx = if x2 > x1 then 1 else -1 in
     let x = ref x1 in
     while !x <> x2 do
-      positions := Position.{ x = !x; y = y2 } :: !positions;
+      positions := { x = !x; y = y2 } :: !positions;
       x := !x + dx
     done);
-  positions := Position.{ x = x2; y = y2 } :: !positions;
+  positions := { x = x2; y = y2 } :: !positions;
   !positions
 ;;
 
@@ -126,13 +126,9 @@ let generate ~config ~seed =
   let min_room_size = Config.min_room_size config in
   let max_room_size = Config.max_room_size config in
   Random.init seed;
-  (* Start with all walls *)
+  (* Start with no walls - we'll add them as boundaries *)
   let walls = ref Position.Set.empty in
-  for x = 0 to width - 1 do
-    for y = 0 to height - 1 do
-      walls := Set.add !walls Position.{ x; y }
-    done
-  done;
+  let floors = ref Position.Set.empty in
   (* Place rooms *)
   let rooms = ref [] in
   for _ = 1 to room_attempts do
@@ -148,9 +144,9 @@ let generate ~config ~seed =
     if not overlaps_any
     then (
       rooms := new_room :: !rooms;
-      (* Carve out the room *)
+      (* Add room floors *)
       List.iter (Room.floor_positions new_room) ~f:(fun pos ->
-        walls := Set.remove !walls pos))
+        floors := Set.add !floors pos))
   done;
   (* Connect rooms with corridors *)
   (* Use a simple approach: connect each room to the next one in the list *)
@@ -161,7 +157,7 @@ let generate ~config ~seed =
       let center1 = Room.center room1 in
       let center2 = Room.center room2 in
       let corridor = create_corridor ~from:center1 ~to_:center2 in
-      List.iter corridor ~f:(fun pos -> walls := Set.remove !walls pos);
+      List.iter corridor ~f:(fun pos -> floors := Set.add !floors pos);
       connect_rooms (room2 :: rest)
   in
   (* Additionally, add some random connections for variety *)
@@ -177,8 +173,35 @@ let generate ~config ~seed =
         let center1 = Room.center rooms_array.(idx1) in
         let center2 = Room.center rooms_array.(idx2) in
         let corridor = create_corridor ~from:center1 ~to_:center2 in
-        List.iter corridor ~f:(fun pos -> walls := Set.remove !walls pos))
+        List.iter corridor ~f:(fun pos -> floors := Set.add !floors pos))
     done);
   connect_rooms !rooms;
+  (* Now create walls: border walls and walls adjacent to floors *)
+  (* Add border walls *)
+  for x = 0 to width - 1 do
+    walls := Set.add !walls { x; y = 0 };
+    walls := Set.add !walls { x; y = height - 1 }
+  done;
+  for y = 0 to height - 1 do
+    walls := Set.add !walls { x = 0; y };
+    walls := Set.add !walls { x = width - 1; y }
+  done;
+  (* Add walls adjacent to floors (but not on floors) *)
+  Set.iter !floors ~f:(fun floor_pos ->
+    let adjacent_positions =
+      [ { x = floor_pos.x - 1; y = floor_pos.y }
+      ; { x = floor_pos.x + 1; y = floor_pos.y }
+      ; { x = floor_pos.x; y = floor_pos.y - 1 }
+      ; { x = floor_pos.x; y = floor_pos.y + 1 }
+      ]
+    in
+    List.iter adjacent_positions ~f:(fun pos ->
+      (* Only add wall if it's within bounds and not already a floor *)
+      if pos.x >= 0
+         && pos.x < width
+         && pos.y >= 0
+         && pos.y < height
+         && not (Set.mem !floors pos)
+      then walls := Set.add !walls pos));
   !walls
 ;;
