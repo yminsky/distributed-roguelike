@@ -26,7 +26,7 @@ let%expect_test "game state creation and movement" =
         ~player_id:(Protocol.Player_id.create "player1")
         ~direction:Right
     with
-    | Ok s -> s
+    | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move right"
   in
   let player_after_right =
@@ -47,7 +47,7 @@ let%expect_test "game state creation and movement" =
         ~player_id:(Protocol.Player_id.create "player1")
         ~direction:Up
     with
-    | Ok s -> s
+    | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move up"
   in
   let player_after_up =
@@ -133,7 +133,7 @@ let%expect_test "visual state transitions" =
         ~player_id:(Protocol.Player_id.create "player1")
         ~direction:Right
     with
-    | Ok s -> s
+    | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move right"
   in
   let state =
@@ -143,7 +143,7 @@ let%expect_test "visual state transitions" =
         ~player_id:(Protocol.Player_id.create "player1")
         ~direction:Right
     with
-    | Ok s -> s
+    | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move right"
   in
   print_endline (render_state state);
@@ -155,7 +155,7 @@ let%expect_test "visual state transitions" =
         ~player_id:(Protocol.Player_id.create "player1")
         ~direction:Down
     with
-    | Ok s -> s
+    | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move down"
   in
   print_endline (render_state state);

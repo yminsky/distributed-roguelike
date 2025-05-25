@@ -19,12 +19,12 @@ val add_player
 val remove_player : t -> player_id:Protocol.Player_id.t -> t
 
 (** Move a player in the given direction. Returns Error if player not found or collision
-    detected. *)
+    detected. On success, returns the new state and the update to broadcast. *)
 val move_player
   :  t
   -> player_id:Protocol.Player_id.t
   -> direction:Protocol.Direction.t
-  -> (t, string) Result.t
+  -> (t * Protocol.Update.t, string) Result.t
 
 val get_players : t -> Protocol.Player.t list
 val get_player : t -> player_id:Protocol.Player_id.t -> Protocol.Player.t option

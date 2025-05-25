@@ -84,7 +84,7 @@ let%expect_test "collision detection" =
         ~player_id:(Protocol.Player_id.create "bob")
         ~direction:Left
     with
-    | Ok s -> s
+    | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move Bob left"
   in
   let bob =
@@ -106,7 +106,7 @@ let%expect_test "collision detection" =
       ~direction:Left
   in
   (match result with
-   | Ok _ -> printf "Move succeeded (unexpected)\n"
+   | Ok (_state, _update) -> printf "Move succeeded (unexpected)\n"
    | Error msg -> printf "Move blocked: %s\n" msg);
   (* Move Bob in a different direction (should work) *)
   let result =
@@ -116,7 +116,7 @@ let%expect_test "collision detection" =
       ~direction:Down
   in
   (match result with
-   | Ok new_state ->
+   | Ok (new_state, _update) ->
      let bob =
        Game_state.get_player new_state ~player_id:(Protocol.Player_id.create "bob")
      in
@@ -176,7 +176,7 @@ let%expect_test "visual multi-player rendering" =
         ~player_id:(Protocol.Player_id.create "bob")
         ~direction:Right
     with
-    | Ok s -> s
+    | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move Bob right"
   in
   let state =
@@ -186,7 +186,7 @@ let%expect_test "visual multi-player rendering" =
         ~player_id:(Protocol.Player_id.create "bob")
         ~direction:Right
     with
-    | Ok s -> s
+    | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move Bob right again"
   in
   let state =
@@ -196,7 +196,7 @@ let%expect_test "visual multi-player rendering" =
         ~player_id:(Protocol.Player_id.create "charlie")
         ~direction:Down
     with
-    | Ok s -> s
+    | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move Charlie down"
   in
   (* Render the world *)

@@ -86,7 +86,8 @@ let move_player t ~player_id ~(direction : Protocol.Direction.t) =
         (player_id, updated_player)
         :: List.Assoc.remove t.players player_id ~equal:Protocol.Player_id.equal
       in
-      Ok { t with players })
+      let update = Protocol.Update.Player_moved { player_id; new_position = new_pos } in
+      Ok ({ t with players }, update))
 ;;
 
 let get_players t = List.map t.players ~f:(fun (_, player) -> player)

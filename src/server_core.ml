@@ -53,25 +53,11 @@ module Server_state = struct
   ;;
 
   let move_player t ~player_id ~direction =
-    (* TODO: I think it would be better of Game_state returned the
-       player update.  That way, it would be clearer from the
-       Game_state code itself that the client-side view and the server
-       side view are the same.
-
-       Indeed, it would be nice to factor Game_state so it contained
-       inside of it an explicit Client_state, which was kept up to
-       date by applying the exact same update-messages that are
-       streamed to clients.
-    *)
     match Game_state.move_player t.game_state ~player_id ~direction with
-    | Ok new_game_state ->
+    | Ok (new_game_state, update) ->
       t.game_state <- new_game_state;
-      let player = Game_state.get_player t.game_state ~player_id in
-      (match player with
-       | Some p ->
-         broadcast_update t (Player_moved { player_id; new_position = p.position });
-         Ok ()
-       | None -> Error "Player disappeared after move")
+      broadcast_update t update;
+      Ok ()
     | Error msg -> Error msg
   ;;
 
