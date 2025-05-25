@@ -47,11 +47,22 @@ let handle_input client =
     | `Eof -> return `Quit
     | `Ok event ->
       (match event with
-       | `Key (key, []) ->
-         let%bind action = handle_key key in
-         (match action with
-          | `Continue -> loop ()
-          | `Quit -> return `Quit)
+       | `Key (key, mods) ->
+         (* Check for Ctrl-C *)
+         (match key, mods with
+          | `ASCII 'c', [ `Ctrl ] | `ASCII 'C', [ `Ctrl ] ->
+            let%bind _result = send_request client Leave in
+            return `Quit
+          | _ ->
+            (* Handle other keys *)
+            (match mods with
+             | [] ->
+               let%bind action = handle_key key in
+               (match action with
+                | `Continue -> loop ()
+                | `Quit -> return `Quit)
+             | _ -> loop ()))
+         (* ignore keys with modifiers for now *)
        | _ -> loop ())
   in
   loop ()
@@ -170,15 +181,36 @@ let connect_to_server ~host ~port ~player_name =
     return (client, pipe)
 ;;
 
+let cleanup_and_exit client =
+  (* Send leave request to server *)
+  don't_wait_for
+    (let%bind _ =
+       Rpc.Rpc.dispatch
+         Protocol.Rpc_calls.send_request
+         client.connection
+         Protocol.Request.Leave
+     in
+     return ());
+  (* Release terminal *)
+  let%bind () = Notty_async.Term.release client.term in
+  (* Close connection *)
+  let%bind () = Rpc.Connection.close client.connection in
+  (* Force immediate exit *)
+  Shutdown.exit 0
+;;
+
 let main_loop ~host ~port ~player_name =
   let%bind client, _update_pipe = connect_to_server ~host ~port ~player_name in
   let%bind () = Notty_async.Term.cursor client.term (Some (0, 0)) in
+  (* Run render loop and state updates in the background *)
   don't_wait_for (render_loop client);
   don't_wait_for (handle_state_updates client);
+  (* Handle input until quit *)
   let%bind result = handle_input client in
   match result with
-  | `Quit -> return ()
-  | `Continue -> return ()
+  | `Quit | `Continue ->
+    (* Clean shutdown *)
+    cleanup_and_exit client
 ;;
 
 let command =
