@@ -13,14 +13,18 @@ let%expect_test "generate default dungeon" =
   let floor_count = (width * height) - Set.length walls in
   printf "Floor tiles: %d (out of %d total)\n" floor_count (width * height);
   (* Visualize a portion of the dungeon *)
-  printf "\nDungeon excerpt (top-left 30x20):\n";
-  for y = 0 to 19 do
-    for x = 0 to 29 do
-      let pos = Position.{ x; y } in
-      if Set.mem walls pos then printf "#" else printf "."
-    done;
-    printf "\n"
-  done;
+  let excerpt_width = 30 in
+  let excerpt_height = 20 in
+  printf "\n";
+  (* Create a subset of walls for the excerpt *)
+  let excerpt_walls =
+    Set.filter walls ~f:(fun pos -> pos.x < excerpt_width && pos.y < excerpt_height)
+  in
+  Test_utils.print_map
+    ~width:excerpt_width
+    ~height:excerpt_height
+    ~walls:excerpt_walls
+    ~title:(sprintf "Dungeon excerpt (top-left %dx%d)" excerpt_width excerpt_height);
   [%expect
     {|
     Floor tiles: 1676 (out of 2500 total)
@@ -132,10 +136,12 @@ let%expect_test "create config with invalid room size" =
 ;;
 
 let%expect_test "small dungeon generation" =
+  let width = 30 in
+  let height = 20 in
   match
     Dungeon_generation.Config.create
-      ~width:30
-      ~height:20
+      ~width
+      ~height
       ~room_attempts:5
       ~min_room_size:3
       ~max_room_size:6
@@ -143,14 +149,11 @@ let%expect_test "small dungeon generation" =
   | Error _ -> printf "Failed to create config\n"
   | Ok config ->
     let walls = Dungeon_generation.generate ~config ~seed:42 in
-    printf "30x20 dungeon:\n";
-    for y = 0 to 19 do
-      for x = 0 to 29 do
-        let pos = Position.{ x; y } in
-        if Set.mem walls pos then printf "#" else printf "."
-      done;
-      printf "\n"
-    done;
+    Test_utils.print_map
+      ~width
+      ~height
+      ~walls
+      ~title:(sprintf "%dx%d dungeon" width height);
     [%expect
       {|
       30x20 dungeon:

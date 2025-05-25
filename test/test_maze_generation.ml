@@ -123,18 +123,13 @@ let%expect_test "create config with too small dimensions fails" =
 ;;
 
 let%expect_test "small maze generation" =
-  match Maze_generation.Config.create ~width:7 ~height:7 with
+  let width = 7 in
+  let height = 7 in
+  match Maze_generation.Config.create ~width ~height with
   | Error _ -> printf "Failed to create config\n"
   | Ok config ->
     let walls = Maze_generation.generate ~config ~seed:42 in
-    printf "7x7 maze:\n";
-    for y = 0 to 6 do
-      for x = 0 to 6 do
-        let pos = Position.{ x; y } in
-        if Set.mem walls pos then printf "#" else printf "."
-      done;
-      printf "\n"
-    done;
+    Test_utils.print_map ~width ~height ~walls ~title:(sprintf "%dx%d maze" width height);
     [%expect
       {|
       7x7 maze:
