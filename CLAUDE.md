@@ -31,11 +31,18 @@ dune exec ./bin/game_client.exe -- -server localhost
 # Format code (uses janestreet profile)
 dune build @fmt --auto-promote
 
+# Or use the simpler promote command after building
+dune build @fmt && dune promote
+
 # Run a specific test file
 dune exec test/<test_name>.exe
 ```
 
 ## Development Tips
+
+- **Always format code before committing**: Run `dune build @fmt` followed by
+  `dune promote` (or `dune build @fmt --auto-promote`) to ensure consistent
+  code formatting using the janestreet profile.
 
 - When making types abstract in `.mli` files, use `dune build @check` to find
   all places where the implementation details are used. This is more reliable
