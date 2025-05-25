@@ -27,14 +27,14 @@ let%expect_test "generate default dungeon" =
     ~title:(sprintf "Dungeon excerpt (top-left %dx%d)" excerpt_width excerpt_height);
   [%expect
     {|
-    Floor tiles: 1676 (out of 2500 total)
+    Floor tiles: 1845 (out of 2500 total)
 
     Dungeon excerpt (top-left 30x20):
-    ##############################
-    #.............................
-    #..........###################
-    #.........#...................
-    #####.....#..........#########
+    ..............................
+    ..............................
+    ...........###################
+    ..........#...................
+    .####.....#..........#########
     #....#....#..........##....#..
     #....#....#..........##....#..
     #....#....#..........##....#..
@@ -43,47 +43,32 @@ let%expect_test "generate default dungeon" =
     #....######..........##....###
     #....#....#..........##....#..
     #....#....#..........#.##.#...
-    ###.#.....#.####.####...#.#..#
-    #.#.#.....#.#..#.########.####
-    #.#.#.....#.#..#..............
-    #.#.#.....#.#..#.########.####
-    #.#.#.....#.#..#.#......#.#..#
-    #.#.#.....#.#..#.#.######.#...
-    #.#.#.....#.#..#.##.....#.#...
+    .##.#.....#.####.####...#.#..#
+    ..#.#.....#.#..#.########.####
+    ..#.#.....#.#..#..............
+    ..#.#.....#.#..#.########.####
+    ..#.#.....#.#..#.#......#.#..#
+    ..#.#.....#.#..#.#.######.#...
+    ..#.#.....#.#..#.##.....#.#...
     |}]
 ;;
 
-let%expect_test "dungeon has continuous border" =
+let%expect_test "dungeon has no forced borders" =
   let config = Dungeon_generation.Config.default in
   let walls = Dungeon_generation.generate ~config ~seed:123 in
   let width = Dungeon_generation.Config.width config in
   let height = Dungeon_generation.Config.height config in
-  (* Check borders *)
-  let top_border_complete =
-    List.for_all (List.range 0 width) ~f:(fun x -> Set.mem walls Position.{ x; y = 0 })
+  (* Check that borders are not automatically walled *)
+  let has_any_edge_floor =
+    List.exists (List.range 0 width) ~f:(fun x ->
+      (not (Set.mem walls Position.{ x; y = 0 }))
+      || not (Set.mem walls Position.{ x; y = height - 1 }))
+    || List.exists (List.range 0 height) ~f:(fun y ->
+      (not (Set.mem walls Position.{ x = 0; y }))
+      || not (Set.mem walls Position.{ x = width - 1; y }))
   in
-  let bottom_border_complete =
-    List.for_all (List.range 0 width) ~f:(fun x ->
-      Set.mem walls Position.{ x; y = height - 1 })
-  in
-  let left_border_complete =
-    List.for_all (List.range 0 height) ~f:(fun y -> Set.mem walls Position.{ x = 0; y })
-  in
-  let right_border_complete =
-    List.for_all (List.range 0 height) ~f:(fun y ->
-      Set.mem walls Position.{ x = width - 1; y })
-  in
-  printf "Top border complete: %b\n" top_border_complete;
-  printf "Bottom border complete: %b\n" bottom_border_complete;
-  printf "Left border complete: %b\n" left_border_complete;
-  printf "Right border complete: %b\n" right_border_complete;
-  [%expect
-    {|
-    Top border complete: true
-    Bottom border complete: true
-    Left border complete: true
-    Right border complete: true
-    |}]
+  printf "Has floor tiles at edges: %b\n" has_any_edge_floor;
+  [%expect {| Has floor tiles at edges: true |}]
 ;;
 
 let%expect_test "create config with valid parameters" =
@@ -157,26 +142,26 @@ let%expect_test "small dungeon generation" =
     [%expect
       {|
       30x20 dungeon:
-      ##############################
-      #........#....#..............#
-      #........#....#..............#
-      #........#....################
-      #........#...................#
-      #........#....##########.....#
-      #........#....#..............#
-      #.........#####.########.....#
-      #.............#.#......#.....#
-      #............#...#########.###
-      #............#.............#.#
-      #............#...##########..#
-      #.............###............#
-      #............................#
-      #............................#
-      #............................#
-      #............................#
-      #............................#
-      #............................#
-      ##############################
+      ..........####................
+      .........#....#...............
+      .........#....#...............
+      .........#....###############.
+      .........#...................#
+      .........#....##########.....#
+      .........#....#..............#
+      ..........#####.########.....#
+      ..............#.#......#.....#
+      .............#...#########.##.
+      .............#.............#..
+      .............#...##########...
+      ..............###.............
+      ..............................
+      ..............................
+      ..............................
+      ..............................
+      ..............................
+      ..............................
+      ..............................
       |}]
 ;;
 

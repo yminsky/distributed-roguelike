@@ -177,15 +177,7 @@ let generate ~config ~seed =
     done);
   connect_rooms !rooms;
   (* Now create walls: border walls and walls adjacent to floors *)
-  (* Add border walls *)
-  for x = 0 to width - 1 do
-    walls := Set.add !walls { x; y = 0 };
-    walls := Set.add !walls { x; y = height - 1 }
-  done;
-  for y = 0 to height - 1 do
-    walls := Set.add !walls { x = 0; y };
-    walls := Set.add !walls { x = width - 1; y }
-  done;
+  (* No border walls - only walls adjacent to floors *)
   (* Add walls adjacent to floors (but not on floors) *)
   Set.iter !floors ~f:(fun floor_pos ->
     let adjacent_positions =
