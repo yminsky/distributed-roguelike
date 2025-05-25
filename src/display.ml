@@ -14,7 +14,13 @@ end
 
 let render_grid (world_view : World_view.t) =
   let open Notty in
-  let { World_view.center_pos = { x = cx; y = cy }; view_width; view_height; players; walls } =
+  let { World_view.center_pos = { x = cx; y = cy }
+      ; view_width
+      ; view_height
+      ; players
+      ; walls
+      }
+    =
     world_view
   in
   let half_width = view_width / 2 in

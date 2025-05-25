@@ -5,8 +5,8 @@ open! Core
 
 type t
 
-(** Create empty game state with max_players of 10. 
-    If use_test_maze is true, creates a simple test maze with walls. *)
+(** Create empty game state with max_players of 10. If use_test_maze is true, creates a
+    simple test maze with walls. *)
 val create : ?use_test_maze:bool -> unit -> t
 
 (** Add a new player with unique spawn position and sigil. Returns Error if server is full

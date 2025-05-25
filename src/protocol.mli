@@ -9,7 +9,7 @@ module Position : sig
     ; y : int
     }
   [@@deriving sexp, bin_io, compare, equal]
-  
+
   include Comparable.S with type t := t
 end
 

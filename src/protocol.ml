@@ -9,9 +9,9 @@ module Position = struct
       }
     [@@deriving sexp, bin_io, compare, equal]
   end
-  
+
   include T
-  include Comparable.Make(T)
+  include Comparable.Make (T)
 end
 
 module Direction = struct

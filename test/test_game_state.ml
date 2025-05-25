@@ -117,11 +117,11 @@ let%expect_test "wall collision detection" =
     | Error _ -> failwith "Failed to add player"
   in
   printf "Player spawned at (%d, %d)\n" player.position.x player.position.y;
-  
   (* Try to move up multiple times to hit a wall *)
   let rec move_until_wall state direction count =
-    if count > 10 then state
-    else
+    if count > 10
+    then state
+    else (
       match
         Game_state.move_player
           state
@@ -133,11 +133,10 @@ let%expect_test "wall collision detection" =
         move_until_wall new_state direction (count + 1)
       | Error msg ->
         printf "Movement blocked: %s\n" msg;
-        state
+        state)
   in
-  
   (* First move right to position (1, 0), then up to hit wall at (1, -3) *)
-  let state = 
+  let state =
     match
       Game_state.move_player
         state
@@ -151,11 +150,10 @@ let%expect_test "wall collision detection" =
       printf "Failed to move right: %s\n" msg;
       state
   in
-  
   (* Now try moving up until we hit the wall at (1, -3) *)
   let _ = move_until_wall state Up 0 in
-  
-  [%expect {|
+  [%expect
+    {|
     Player spawned at (0, 0)
     Moved Right successfully
     Moved Up successfully
@@ -184,7 +182,8 @@ let%expect_test "visual rendering with walls" =
       ~player_id:(Protocol.Player_id.create "player1")
   in
   print_endline (render_state state);
-  [%expect {|
+  [%expect
+    {|
            .
       #####.#####
       #    .    #

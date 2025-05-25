@@ -8,6 +8,7 @@ type t =
 
 let default_max_players = 10
 let max_spawn_search_radius = 20
+
 let create_test_maze_walls () =
   (* Create a simple test maze with a central room and corridors
      The spawn point at (0,0) is guaranteed to be in the central room *)
@@ -30,11 +31,13 @@ let create_test_maze_walls () =
   Set.to_list walls_set
 ;;
 
-let create ?(use_test_maze = false) () = 
+let create ?(use_test_maze = false) () =
   { players = []
   ; max_players = default_max_players
-  ; walls = if use_test_maze then create_test_maze_walls () else []
+  ; walls = (if use_test_maze then create_test_maze_walls () else [])
   }
+;;
+
 let player_sigils = [| '@'; '#'; '$'; '%'; '&'; '*'; '+'; '='; '?'; '!' |]
 
 let next_available_sigil t =
@@ -63,7 +66,7 @@ let find_spawn_position t =
     else (
       match
         List.find (positions_at_radius radius) ~f:(fun pos ->
-          not (List.exists occupied_positions ~f:(Protocol.Position.equal pos))
+          (not (List.exists occupied_positions ~f:(Protocol.Position.equal pos)))
           && not (List.exists wall_positions ~f:(Protocol.Position.equal pos)))
       with
       | Some pos -> pos
@@ -102,9 +105,7 @@ let move_player t ~player_id ~(direction : Protocol.Direction.t) =
   | Some player ->
     let new_pos = Protocol.Direction.apply_to_position direction player.position in
     (* Check for collisions with walls *)
-    let wall_collision = 
-      List.exists t.walls ~f:(Protocol.Position.equal new_pos)
-    in
+    let wall_collision = List.exists t.walls ~f:(Protocol.Position.equal new_pos) in
     if wall_collision
     then Error "Cannot move into a wall"
     else (

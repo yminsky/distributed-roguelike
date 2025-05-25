@@ -24,7 +24,10 @@ module Server_state = struct
     }
 
   let create () =
-    { game_state = Game_state.create ~use_test_maze:true (); next_player_id = 1; update_writers = ref [] }
+    { game_state = Game_state.create ~use_test_maze:true ()
+    ; next_player_id = 1
+    ; update_writers = ref []
+    }
   ;;
 
   let add_update_writer t writer = t.update_writers := writer :: !(t.update_writers)
