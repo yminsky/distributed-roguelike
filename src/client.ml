@@ -119,8 +119,17 @@ let render_loop client =
 ;;
 
 let connect_to_server ~host ~port ~player_name =
-  let%bind _socket, reader, writer =
-    Tcp.connect (Tcp.Where_to_connect.of_host_and_port { host; port })
+  let%bind socket_result =
+    Monitor.try_with (fun () ->
+      Tcp.connect (Tcp.Where_to_connect.of_host_and_port { host; port }))
+  in
+  let _socket, reader, writer =
+    match socket_result with
+    | Ok result -> result
+    | Error exn ->
+      printf "Failed to connect to server at %s:%d\n" host port;
+      printf "Make sure the server is running: dune exec bin/game_server.exe\n";
+      raise exn
   in
   let%bind connection_result =
     Rpc.Connection.create reader writer ~connection_state:(fun _ -> ())
@@ -130,11 +139,8 @@ let connect_to_server ~host ~port ~player_name =
     | Ok connection -> connection
     | Error exn -> failwith ("Failed to create RPC connection: " ^ Exn.to_string exn)
   in
-  let%bind dummy_term = Notty_async.Term.create () in
   let%bind result =
-    send_request
-      { connection; your_id = ""; all_players = []; term = dummy_term }
-      (Join { player_name })
+    Rpc.Rpc.dispatch Protocol.Rpc_calls.send_request connection (Join { player_name })
   in
   match result with
   | Error err -> failwith ("Join request failed: " ^ Error.to_string_hum err)
