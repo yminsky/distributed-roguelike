@@ -5,7 +5,8 @@ module Maze_config = struct
   type t =
     | No_maze
     | Test_maze
-    | Generated of Maze_generation.Config.t * int
+    | Generated_maze of Maze_generation.Config.t * int
+    | Generated_dungeon of Dungeon_generation.Config.t * int
 end
 
 type t =
@@ -44,7 +45,10 @@ let create ?(maze_config = Maze_config.No_maze) () =
     match maze_config with
     | No_maze -> []
     | Test_maze -> create_test_maze_walls ()
-    | Generated (config, seed) -> Maze_generation.generate ~config ~seed |> Set.to_list
+    | Generated_maze (config, seed) ->
+      Maze_generation.generate ~config ~seed |> Set.to_list
+    | Generated_dungeon (config, seed) ->
+      Dungeon_generation.generate ~config ~seed |> Set.to_list
   in
   { players = []; max_players = default_max_players; walls }
 ;;

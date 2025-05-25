@@ -11,8 +11,10 @@ module Maze_config : sig
   type t =
     | No_maze (** Empty level with no walls *)
     | Test_maze (** Simple 7x7 room for testing *)
-    | Generated of Maze_generation.Config.t * int
+    | Generated_maze of Maze_generation.Config.t * int
     (** Generated maze with config and seed *)
+    | Generated_dungeon of Dungeon_generation.Config.t * int
+    (** Generated dungeon with config and seed *)
 end
 
 (** Create game state with specified maze configuration. Defaults to No_maze if not

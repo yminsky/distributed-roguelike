@@ -139,7 +139,8 @@ let%expect_test "small dungeon generation" =
       ~height
       ~walls
       ~title:(sprintf "%dx%d dungeon" width height);
-    [%expect {|
+    [%expect
+      {|
       70x70 dungeon:
       ......................................................................
       ......................................................................
