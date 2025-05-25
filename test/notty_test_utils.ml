@@ -20,14 +20,11 @@ let render_state_to_string ?(width = 21) ?(height = 11) state ~player_id =
       ; view_width = width
       ; view_height = height
       ; visible_positions =
-          (* For tests, make everything visible within view bounds *)
-          let positions = ref [] in
-          for x = center_pos.x - width / 2 to center_pos.x + width / 2 do
-            for y = center_pos.y - height / 2 to center_pos.y + height / 2 do
-              positions := Lan_rogue.Protocol.Position.{ x; y } :: !positions
-            done
-          done;
-          Lan_rogue.Protocol.Position.Set.of_list !positions
+          (* Use actual visibility computation *)
+          Lan_rogue.Visibility.compute_visible_tiles
+            ~from:center_pos
+            ~walls:(Lan_rogue.Protocol.Position.Set.of_list walls)
+            ~max_radius:4
       }
   in
   let image = Lan_rogue.Display.render_ui world_view in

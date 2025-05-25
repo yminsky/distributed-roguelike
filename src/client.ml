@@ -3,7 +3,7 @@ open Async
 
 let default_host = "127.0.0.1"
 let default_port = 8080
-let default_visibility_radius = 10
+let default_visibility_radius = 4
 
 type game_client =
   { connection : Rpc.Connection.t
