@@ -127,7 +127,7 @@ let%expect_test "small dungeon generation" =
     Dungeon_generation.Config.create
       ~width
       ~height
-      ~room_attempts:5
+      ~room_attempts:10
       ~min_room_size:5
       ~max_room_size:30
   with
