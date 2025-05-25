@@ -1,6 +1,7 @@
 (** Rendering engine for the game world using Notty terminal graphics. *)
 
 open! Core
+open! Import
 
 module World_view : sig
   (** Configuration for what portion of the game world to render. *)

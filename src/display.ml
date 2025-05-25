@@ -1,13 +1,14 @@
 open! Core
+open! Import
 
 module World_view = struct
   type t =
     { players : Protocol.Player.t list
-    ; walls : Protocol.Position.t list
-    ; center_pos : Protocol.Position.t
+    ; walls : Position.t list
+    ; center_pos : Position.t
     ; view_width : int
     ; view_height : int
-    ; visible_positions : Protocol.Position.Set.t
+    ; visible_positions : Position.Set.t
     }
 end
 
@@ -30,18 +31,18 @@ let render_grid (world_view : World_view.t) =
     List.fold players ~init:[] ~f:(fun acc player -> (player.position, player) :: acc)
   in
   (* Create a set of wall positions for efficient lookup *)
-  let wall_set = Set.of_list (module Protocol.Position) walls in
+  let wall_set = Set.of_list (module Position) walls in
   let render_empty_cell _world_x _world_y =
     '.', A.(fg lightblack)
     (* All floor tiles are periods *)
   in
   let render_cell world_x world_y =
-    let world_pos = Protocol.Position.{ x = world_x; y = world_y } in
+    let world_pos = Position.{ x = world_x; y = world_y } in
     if not (Set.mem visible_positions world_pos)
     then I.(string A.(fg black) " ") (* Not visible - render as black space *)
     else (
       let ch, color =
-        match List.Assoc.find player_map world_pos ~equal:Protocol.Position.equal with
+        match List.Assoc.find player_map world_pos ~equal:Position.equal with
         | Some player -> player.sigil, A.(fg lightgreen)
         | None ->
           if Set.mem wall_set world_pos
@@ -93,15 +94,15 @@ let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height
   let center_pos =
     match viewing_player with
     | Some player -> player.Protocol.Player.position
-    | None -> Protocol.Position.{ x = 0; y = 0 }
+    | None -> Position.{ x = 0; y = 0 }
   in
   let visible_positions =
     match viewing_player with
-    | None -> Protocol.Position.Set.empty
+    | None -> Position.Set.empty
     | Some player ->
       Visibility.compute_visible_tiles
         ~from:player.Protocol.Player.position
-        ~walls:(Protocol.Position.Set.of_list walls)
+        ~walls:(Position.Set.of_list walls)
         ~max_radius:default_visibility_radius
   in
   World_view.{ players; walls; center_pos; view_width; view_height; visible_positions }

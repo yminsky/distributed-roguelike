@@ -4,6 +4,7 @@
     visible from a given position, taking walls into account. *)
 
 open! Core
+open! Import
 
 (** Compute visible tiles from a given position using shadow-casting.
 

@@ -1,6 +1,7 @@
 (** Procedural maze generation. *)
 
 open! Core
+open! Import
 
 (** Configuration for maze generation using recursive backtracker algorithm.
 

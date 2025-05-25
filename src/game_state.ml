@@ -1,4 +1,5 @@
 open! Core
+open! Import
 
 module Maze_config = struct
   type t =
@@ -10,7 +11,7 @@ end
 type t =
   { players : (Protocol.Player_id.t, Protocol.Player.t) List.Assoc.t
   ; max_players : int
-  ; walls : Protocol.Position.t list
+  ; walls : Position.t list
   }
 
 let default_max_players = 10
@@ -22,19 +23,19 @@ let create_test_maze_walls () =
   let walls = ref [] in
   (* Create a square box from (-3,-3) to (3,3) *)
   for x = -3 to 3 do
-    walls := Protocol.Position.{ x; y = -3 } :: !walls;
-    walls := Protocol.Position.{ x; y = 3 } :: !walls
+    walls := Position.{ x; y = -3 } :: !walls;
+    walls := Position.{ x; y = 3 } :: !walls
   done;
   for y = -2 to 2 do
-    walls := Protocol.Position.{ x = -3; y } :: !walls;
-    walls := Protocol.Position.{ x = 3; y } :: !walls
+    walls := Position.{ x = -3; y } :: !walls;
+    walls := Position.{ x = 3; y } :: !walls
   done;
   (* Remove some walls to create openings *)
-  let walls_set = Set.of_list (module Protocol.Position) !walls in
-  let walls_set = Set.remove walls_set Protocol.Position.{ x = 0; y = -3 } in
-  let walls_set = Set.remove walls_set Protocol.Position.{ x = 0; y = 3 } in
-  let walls_set = Set.remove walls_set Protocol.Position.{ x = -3; y = 0 } in
-  let walls_set = Set.remove walls_set Protocol.Position.{ x = 3; y = 0 } in
+  let walls_set = Set.of_list (module Position) !walls in
+  let walls_set = Set.remove walls_set Position.{ x = 0; y = -3 } in
+  let walls_set = Set.remove walls_set Position.{ x = 0; y = 3 } in
+  let walls_set = Set.remove walls_set Position.{ x = -3; y = 0 } in
+  let walls_set = Set.remove walls_set Position.{ x = 3; y = 0 } in
   Set.to_list walls_set
 ;;
 
@@ -66,7 +67,7 @@ let find_spawn_position t =
     List.concat_map range ~f:(fun dx ->
       List.filter_map range ~f:(fun dy ->
         if abs dx = radius || abs dy = radius
-        then Some Protocol.Position.{ x = dx; y = dy }
+        then Some Position.{ x = dx; y = dy }
         else None))
   in
   (* Try positions in a spiral around origin *)
@@ -76,8 +77,8 @@ let find_spawn_position t =
     else (
       match
         List.find (positions_at_radius radius) ~f:(fun pos ->
-          (not (List.exists occupied_positions ~f:(Protocol.Position.equal pos)))
-          && not (List.exists wall_positions ~f:(Protocol.Position.equal pos)))
+          (not (List.exists occupied_positions ~f:(Position.equal pos)))
+          && not (List.exists wall_positions ~f:(Position.equal pos)))
       with
       | Some pos -> pos
       | None -> try_positions (radius + 1))
@@ -115,7 +116,7 @@ let move_player t ~player_id ~(direction : Protocol.Direction.t) =
   | Some player ->
     let new_pos = Protocol.Direction.apply_to_position direction player.position in
     (* Check for collisions with walls *)
-    let wall_collision = List.exists t.walls ~f:(Protocol.Position.equal new_pos) in
+    let wall_collision = List.exists t.walls ~f:(Position.equal new_pos) in
     if wall_collision
     then Error "Cannot move into a wall"
     else (
@@ -123,7 +124,7 @@ let move_player t ~player_id ~(direction : Protocol.Direction.t) =
       let player_collision =
         List.exists t.players ~f:(fun (other_id, other_player) ->
           (not (Protocol.Player_id.equal other_id player_id))
-          && Protocol.Position.equal other_player.position new_pos)
+          && Position.equal other_player.position new_pos)
       in
       if player_collision
       then Error "Cannot move into another player"

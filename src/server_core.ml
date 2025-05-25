@@ -1,4 +1,5 @@
 open! Core
+open! Import
 open Async_kernel
 module Rpc = Async_rpc_kernel.Rpc
 

@@ -1,15 +1,16 @@
 open! Core
+open! Import
 
 (* Bresenham's line algorithm to get all points on a line between two positions *)
 let line_between ~from ~to_pos =
-  let x0, y0 = from.Protocol.Position.x, from.Protocol.Position.y in
-  let x1, y1 = to_pos.Protocol.Position.x, to_pos.Protocol.Position.y in
+  let x0, y0 = from.x, from.y in
+  let x1, y1 = to_pos.x, to_pos.y in
   let dx = abs (x1 - x0) in
   let dy = abs (y1 - y0) in
   let sx = if x0 < x1 then 1 else -1 in
   let sy = if y0 < y1 then 1 else -1 in
   let rec loop x y err acc =
-    let pos = Protocol.Position.{ x; y } in
+    let pos = Position.{ x; y } in
     let acc = pos :: acc in
     if x = x1 && y = y1
     then List.rev acc
@@ -42,14 +43,14 @@ let compute_visible_tiles ~from ~walls ~max_radius =
     for dy = -max_radius to max_radius do
       if (dx * dx) + (dy * dy) <= radius_squared
       then (
-        let pos = Protocol.Position.{ x = from.x + dx; y = from.y + dy } in
+        let pos = Position.{ x = from.x + dx; y = from.y + dy } in
         positions_in_radius := pos :: !positions_in_radius)
     done
   done;
   (* Filter to only include positions with line of sight *)
   let visible_positions =
     List.filter !positions_in_radius ~f:(fun target ->
-      Protocol.Position.equal from target || has_line_of_sight ~from ~target ~walls)
+      Position.equal from target || has_line_of_sight ~from ~target ~walls)
   in
-  Protocol.Position.Set.of_list visible_positions
+  Position.Set.of_list visible_positions
 ;;

@@ -1,4 +1,5 @@
 open! Core
+open! Import
 open Async
 
 let default_host = "127.0.0.1"
@@ -8,7 +9,7 @@ type game_client =
   { connection : Rpc.Connection.t
   ; mutable your_id : Protocol.Player_id.t
   ; mutable all_players : Protocol.Player.t list
-  ; mutable walls : Protocol.Position.t list
+  ; mutable walls : Position.t list
   ; term : Notty_async.Term.t
   }
 

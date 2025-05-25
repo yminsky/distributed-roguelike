@@ -1,4 +1,5 @@
 open! Core
+open! Import
 
 module Config = struct
   type t =
@@ -22,8 +23,6 @@ module Config = struct
 end
 
 (** Direction for maze carving *)
-module Position = Protocol.Position
-
 module Direction_helpers = struct
   open Protocol.Direction
 
@@ -32,14 +31,11 @@ module Direction_helpers = struct
   (* Move 2 cells in the given direction for maze carving *)
   let move_2 pos dir =
     let dx, dy = to_delta dir in
-    Position.{ x = pos.Position.x + (2 * dx); y = pos.Position.y + (2 * dy) }
+    Position.{ x = pos.x + (2 * dx); y = pos.y + (2 * dy) }
   ;;
 
   let wall_between from to_pos =
-    Position.
-      { x = (from.Position.x + to_pos.Position.x) / 2
-      ; y = (from.Position.y + to_pos.Position.y) / 2
-      }
+    Position.{ x = (from.x + to_pos.x) / 2; y = (from.y + to_pos.y) / 2 }
   ;;
 end
 
@@ -57,12 +53,12 @@ let generate ~config ~seed =
   (* Carve out the maze using recursive backtracker *)
   let visited = ref Position.Set.empty in
   let is_valid_cell pos =
-    pos.Position.x >= 1
-    && pos.Position.x < width - 1
-    && pos.Position.y >= 1
-    && pos.Position.y < height - 1
-    && pos.Position.x % 2 = 1
-    && pos.Position.y % 2 = 1
+    pos.x >= 1
+    && pos.x < width - 1
+    && pos.y >= 1
+    && pos.y < height - 1
+    && pos.x % 2 = 1
+    && pos.y % 2 = 1
   in
   let rec carve_from pos =
     (* Mark current position as visited and remove wall *)

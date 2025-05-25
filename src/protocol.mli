@@ -1,17 +1,9 @@
 (** Protocol definitions for client-server communication in LAN Rogue *)
 
 open! Core
+open! Import
 open Async
-
-module Position : sig
-  type t =
-    { x : int
-    ; y : int
-    }
-  [@@deriving sexp, bin_io, compare, equal]
-
-  include Comparable.S with type t := t
-end
+module Position = Position
 
 module Direction : sig
   type t =

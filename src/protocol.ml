@@ -1,18 +1,7 @@
 open! Core
+open! Import
 open Async
-
-module Position = struct
-  module T = struct
-    type t =
-      { x : int
-      ; y : int
-      }
-    [@@deriving sexp, bin_io, compare, equal]
-  end
-
-  include T
-  include Comparable.Make (T)
-end
+module Position = Position
 
 module Direction = struct
   type t =
