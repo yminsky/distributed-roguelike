@@ -31,11 +31,11 @@ module Direction_helpers = struct
   (* Move 2 cells in the given direction for maze carving *)
   let move_2 pos dir =
     let dx, dy = to_delta dir in
-    Position.{ x = pos.x + (2 * dx); y = pos.y + (2 * dy) }
+    { x = pos.x + (2 * dx); y = pos.y + (2 * dy) }
   ;;
 
   let wall_between from to_pos =
-    Position.{ x = (from.x + to_pos.x) / 2; y = (from.y + to_pos.y) / 2 }
+    { x = (from.x + to_pos.x) / 2; y = (from.y + to_pos.y) / 2 }
   ;;
 end
 
@@ -47,7 +47,7 @@ let generate ~config ~seed =
   let walls = ref Position.Set.empty in
   for x = 0 to width - 1 do
     for y = 0 to height - 1 do
-      walls := Set.add !walls Position.{ x; y }
+      walls := Set.add !walls { x; y }
     done
   done;
   (* Carve out the maze using recursive backtracker *)
@@ -85,6 +85,6 @@ let generate ~config ~seed =
         carve_from next))
   in
   (* Start carving from position (1,1) *)
-  carve_from Position.{ x = 1; y = 1 };
+  carve_from { x = 1; y = 1 };
   !walls
 ;;

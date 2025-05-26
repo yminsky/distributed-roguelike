@@ -24,19 +24,19 @@ let create_test_maze_walls () =
   let walls = ref [] in
   (* Create a square box from (-3,-3) to (3,3) *)
   for x = -3 to 3 do
-    walls := Position.{ x; y = -3 } :: !walls;
-    walls := Position.{ x; y = 3 } :: !walls
+    walls := { x; y = -3 } :: !walls;
+    walls := { x; y = 3 } :: !walls
   done;
   for y = -2 to 2 do
-    walls := Position.{ x = -3; y } :: !walls;
-    walls := Position.{ x = 3; y } :: !walls
+    walls := { x = -3; y } :: !walls;
+    walls := { x = 3; y } :: !walls
   done;
   (* Remove some walls to create openings *)
   let walls_set = Set.of_list (module Position) !walls in
-  let walls_set = Set.remove walls_set Position.{ x = 0; y = -3 } in
-  let walls_set = Set.remove walls_set Position.{ x = 0; y = 3 } in
-  let walls_set = Set.remove walls_set Position.{ x = -3; y = 0 } in
-  let walls_set = Set.remove walls_set Position.{ x = 3; y = 0 } in
+  let walls_set = Set.remove walls_set { x = 0; y = -3 } in
+  let walls_set = Set.remove walls_set { x = 0; y = 3 } in
+  let walls_set = Set.remove walls_set { x = -3; y = 0 } in
+  let walls_set = Set.remove walls_set { x = 3; y = 0 } in
   Set.to_list walls_set
 ;;
 
@@ -70,9 +70,7 @@ let find_spawn_position t =
     let range = List.range (-radius) (radius + 1) in
     List.concat_map range ~f:(fun dx ->
       List.filter_map range ~f:(fun dy ->
-        if abs dx = radius || abs dy = radius
-        then Some Position.{ x = dx; y = dy }
-        else None))
+        if abs dx = radius || abs dy = radius then Some { x = dx; y = dy } else None))
   in
   (* Try positions in a spiral around origin *)
   let rec try_positions radius =

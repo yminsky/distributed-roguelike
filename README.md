@@ -1,13 +1,17 @@
 # LAN Rogue
 
-A distributed multiplayer roguelike game for LAN play, built with OCaml and Jane Street libraries.
+A distributed multiplayer roguelike game for LAN play, built with
+OCaml and Jane Street libraries.
 
 ## Features
 
-- **Multiplayer Support**: Multiple players can connect and explore together
-- **Procedural Generation**: Random dungeons with rooms and corridors on each server restart
+- **Multiplayer Support**: Multiple players can connect and explore
+  together
+- **Procedural Generation**: Random dungeons with rooms and corridors
+  on each server restart
 - **Real-time Updates**: See other players move in real-time
-- **Field of View**: Shadow-casting visibility system - walls block your view
+- **Field of View**: Shadow-casting visibility system - walls block
+  your view
 - **Terminal UI**: Clean ASCII graphics with Notty-based display
 
 ## Gameplay
@@ -47,7 +51,7 @@ Alternative map types (configurable in code):
 - Broadcasts updates to all connected clients
 - Generates the dungeon on startup
 
-### Client (`game_client`)  
+### Client (`game_client`)
 - Connects to game server via TCP/IP
 - Renders player's view with visibility/fog of war
 - Sends movement commands to server

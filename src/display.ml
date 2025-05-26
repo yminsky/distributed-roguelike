@@ -37,7 +37,7 @@ let render_grid (world_view : World_view.t) =
     (* All floor tiles are periods *)
   in
   let render_cell world_x world_y =
-    let world_pos = Position.{ x = world_x; y = world_y } in
+    let world_pos = { x = world_x; y = world_y } in
     if not (Set.mem visible_positions world_pos)
     then I.(string A.(fg black) " ") (* Not visible - render as black space *)
     else (
@@ -84,7 +84,7 @@ let render_ui (world_view : World_view.t) =
   I.(grid <-> I.(string A.empty "") <-> status)
 ;;
 
-let default_visibility_radius = 10
+let default_visibility_radius = 25
 
 let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height =
   let viewing_player =
@@ -94,7 +94,7 @@ let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height
   let center_pos =
     match viewing_player with
     | Some player -> player.Protocol.Player.position
-    | None -> Position.{ x = 0; y = 0 }
+    | None -> { x = 0; y = 0 }
   in
   let visible_positions =
     match viewing_player with

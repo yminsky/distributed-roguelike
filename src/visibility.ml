@@ -10,7 +10,7 @@ let line_between ~from ~to_pos =
   let sx = if x0 < x1 then 1 else -1 in
   let sy = if y0 < y1 then 1 else -1 in
   let rec loop x y err acc =
-    let pos = Position.{ x; y } in
+    let pos = { x; y } in
     let acc = pos :: acc in
     if x = x1 && y = y1
     then List.rev acc
@@ -43,7 +43,7 @@ let compute_visible_tiles ~from ~walls ~max_radius =
     for dy = -max_radius to max_radius do
       if (dx * dx) + (dy * dy) <= radius_squared
       then (
-        let pos = Position.{ x = from.x + dx; y = from.y + dy } in
+        let pos = { x = from.x + dx; y = from.y + dy } in
         positions_in_radius := pos :: !positions_in_radius)
     done
   done;

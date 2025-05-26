@@ -27,7 +27,7 @@ module Direction = struct
 
   let apply_to_position t pos =
     let dx, dy = to_delta t in
-    Position.{ x = pos.x + dx; y = pos.y + dy }
+    { x = pos.x + dx; y = pos.y + dy }
   ;;
 end
 
