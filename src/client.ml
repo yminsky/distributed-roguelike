@@ -17,6 +17,7 @@ let send_request client request =
   Rpc.Rpc.dispatch Protocol.Rpc_calls.send_request client.connection request
 ;;
 
+(* TODO: can you inline this? Also, instead of failwith, use [%message] *)
 let handle_response_result result ~on_success ~error_prefix =
   match result with
   | Ok (Ok ()) -> on_success ()
@@ -24,6 +25,7 @@ let handle_response_result result ~on_success ~error_prefix =
   | Error err -> failwith (error_prefix ^ " (RPC error): " ^ Error.to_string_hum err)
 ;;
 
+(* TODO: can you inline this? Also, instead of failwith, use [%message] *)
 let handle_rpc_result_error result ~on_success ~error_prefix =
   match result with
   | Ok (Ok value) -> on_success value
