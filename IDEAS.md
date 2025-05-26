@@ -436,3 +436,89 @@ let npc_think npc game_state =
 - Design the protocol to handle future features (NPCs, items, etc.)
 - Consider performance with many entities on screen
 - Plan for save/load functionality in multiplayer context
+
+## Next Steps - Post-Visibility Implementation
+
+### High Impact, Moderate Complexity
+
+#### 1. Basic Combat System
+- Add health points to players
+- Implement a simple melee attack (spacebar or 'f' key)
+- Players can damage each other when adjacent
+- Respawn system when players die
+- This would add actual gameplay beyond just exploration
+
+#### 2. NPCs/Monsters
+- Start with simple stationary monsters
+- Then add basic AI (move toward nearest player)
+- Different monster types with varying health/damage
+- Monsters spawn when dungeon is generated
+- This gives players something to do together
+
+#### 3. Items and Loot
+- Health potions that spawn in rooms
+- Simple equipment (weapons that increase damage)
+- Inventory system (even just a single equipped weapon slot)
+- Items visible on the ground as different symbols
+
+### Quality of Life Improvements
+
+#### 4. Player Communication
+- Simple chat system (press 'Enter' to type message)
+- Messages appear in a log area below the map
+- Player names shown above their characters
+- "Player X has joined/left" notifications
+
+#### 5. Better Spawn System
+- Spawn players in a guaranteed safe room
+- Ensure spawn area is always accessible
+- Maybe a special "spawn room" that's always generated
+
+#### 6. Minimap
+- Small overview map showing explored areas
+- Different from main view - shows full dungeon layout you've seen
+- Helps with navigation in larger dungeons
+
+### Technical Improvements
+
+#### 7. Save/Load Dungeon Seeds
+- Allow server to specify a seed via command line
+- Save the seed to a file for replaying same dungeon
+- Useful for testing and competitions
+
+#### 8. Performance Optimizations
+- Only send visible entities to each client
+- Delta updates instead of full state
+- Compress network messages
+
+#### 9. Configuration Files
+- Server config file for dungeon parameters
+- Client config for key bindings
+- Player preferences (color schemes, etc.)
+
+### Advanced Features
+
+#### 10. Multiple Floors
+- Stairs up/down to navigate between levels
+- Deeper levels have harder monsters
+- Persistent state across floors
+
+#### 11. Fog of War Persistence
+- Remember what areas you've explored
+- Show previously seen (but not currently visible) areas in gray
+- Shared team visibility option
+
+#### 12. Special Room Types
+- Treasure rooms with better loot
+- Monster dens with many enemies
+- Puzzle rooms with switches/doors
+- Boss rooms with unique challenges
+
+### Recommended Starting Point
+
+I'd suggest starting with **Basic Combat System** or **Simple NPCs/Monsters**. Here's why:
+
+1. **Immediate Gameplay Value**: Right now players can only walk around. Combat would add actual gameplay.
+2. **Builds on Existing Systems**: You already have collision detection and player positions - combat is a natural extension.
+3. **Multiplayer Interaction**: Players can work together against monsters or compete with each other.
+4. **Reasonable Scope**: A basic combat system can be implemented incrementally.
