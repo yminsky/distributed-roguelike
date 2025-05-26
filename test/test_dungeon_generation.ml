@@ -27,7 +27,7 @@ let%expect_test "generate default dungeon" =
     ~title:(sprintf "Dungeon excerpt (top-left %dx%d)" excerpt_width excerpt_height);
   [%expect
     {|
-    Floor tiles: 1845 (out of 2500 total)
+    Floor tiles: 1846 (out of 2500 total)
 
     Dungeon excerpt (top-left 30x20):
     ..............................

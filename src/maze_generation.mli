@@ -47,7 +47,7 @@ end
     @param config Generation parameters
     @param seed Random seed for reproducible generation
     @return Set of wall positions *)
-val generate : config:Config.t -> seed:int -> Protocol.Position.Set.t
+val generate : config:Config.t -> seed:int -> Position.Set.t
 
 (** Other maze generation algorithms that could be implemented in the future:
 

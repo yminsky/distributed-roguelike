@@ -3,7 +3,6 @@
 open! Core
 open! Import
 open Async
-module Position = Position
 
 module Direction : sig
   type t =
@@ -33,6 +32,8 @@ end
 
 module Player_id : sig
   type t [@@deriving sexp, bin_io, compare, equal]
+
+  include Comparable.S with type t := t
 
   val create : string -> t
   val to_string : t -> string

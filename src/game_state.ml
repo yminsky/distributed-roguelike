@@ -10,7 +10,7 @@ module Maze_config = struct
 end
 
 type t =
-  { players : (Protocol.Player_id.t, Protocol.Player.t) List.Assoc.t
+  { players : Protocol.Player.t Protocol.Player_id.Map.t
   ; max_players : int
   ; walls : Position.t list
   }
@@ -50,20 +50,20 @@ let create ?(maze_config = Maze_config.No_maze) () =
     | Generated_dungeon (config, seed) ->
       Dungeon_generation.generate ~config ~seed |> Set.to_list
   in
-  { players = []; max_players = default_max_players; walls }
+  { players = Protocol.Player_id.Map.empty; max_players = default_max_players; walls }
 ;;
 
 let player_sigils = [| '@'; '#'; '$'; '%'; '&'; '*'; '+'; '='; '?'; '!' |]
 
 let next_available_sigil t =
   let used_sigils =
-    List.map t.players ~f:(fun (_, p) -> p.sigil) |> Set.of_list (module Char)
+    Map.data t.players |> List.map ~f:(fun p -> p.sigil) |> Set.of_list (module Char)
   in
   Array.find player_sigils ~f:(fun sigil -> not (Set.mem used_sigils sigil))
 ;;
 
 let find_spawn_position t =
-  let occupied_positions = List.map t.players ~f:(fun (_, p) -> p.position) in
+  let occupied_positions = Map.data t.players |> List.map ~f:(fun p -> p.position) in
   let wall_positions = t.walls in
   (* Generate positions in a spiral around origin *)
   let positions_at_radius radius =
@@ -89,7 +89,7 @@ let find_spawn_position t =
 ;;
 
 let add_player t ~player_id ~player_name =
-  if List.length t.players >= t.max_players
+  if Map.length t.players >= t.max_players
   then Error (sprintf "Server full (max %d players)" t.max_players)
   else (
     match next_available_sigil t with
@@ -99,21 +99,14 @@ let add_player t ~player_id ~player_name =
       let player =
         Protocol.Player.{ id = player_id; position; name = player_name; sigil }
       in
-      let players =
-        (player_id, player)
-        :: List.Assoc.remove t.players player_id ~equal:Protocol.Player_id.equal
-      in
+      let players = Map.set t.players ~key:player_id ~data:player in
       Ok ({ t with players }, player))
 ;;
 
-let remove_player t ~player_id =
-  { t with
-    players = List.Assoc.remove t.players player_id ~equal:Protocol.Player_id.equal
-  }
-;;
+let remove_player t ~player_id = { t with players = Map.remove t.players player_id }
 
 let move_player t ~player_id ~(direction : Protocol.Direction.t) =
-  match List.Assoc.find t.players player_id ~equal:Protocol.Player_id.equal with
+  match Map.find t.players player_id with
   | None -> Error "Player not found"
   | Some player ->
     let new_pos = Protocol.Direction.apply_to_position direction player.position in
@@ -124,28 +117,21 @@ let move_player t ~player_id ~(direction : Protocol.Direction.t) =
     else (
       (* Check for collisions with other players *)
       let player_collision =
-        List.exists t.players ~f:(fun (other_id, other_player) ->
-          (not (Protocol.Player_id.equal other_id player_id))
+        Map.exists t.players ~f:(fun other_player ->
+          (not (Protocol.Player_id.equal other_player.id player_id))
           && Position.equal other_player.position new_pos)
       in
       if player_collision
       then Error "Cannot move into another player"
       else (
         let updated_player = { player with position = new_pos } in
-        let players =
-          (player_id, updated_player)
-          :: List.Assoc.remove t.players player_id ~equal:Protocol.Player_id.equal
-        in
+        let players = Map.set t.players ~key:player_id ~data:updated_player in
         let update = Protocol.Update.Player_moved { player_id; new_position = new_pos } in
         Ok ({ t with players }, update)))
 ;;
 
-let get_players t = List.map t.players ~f:(fun (_, player) -> player)
-
-let get_player t ~player_id =
-  List.Assoc.find t.players player_id ~equal:Protocol.Player_id.equal
-;;
-
+let get_players t = Map.data t.players
+let get_player t ~player_id = Map.find t.players player_id
 let get_walls t = t.walls
 
 (* Key mapping for client controls *)

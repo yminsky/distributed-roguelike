@@ -1,8 +1,9 @@
 open! Core
 open! Import
 open Async
-module Position = Position
 
+(* TODO: Make this its own toplevel, standalone module, like
+   Position. Also, do the same Export trick *)
 module Direction = struct
   type t =
     | Up
@@ -54,6 +55,8 @@ end
 
 module Player_id = struct
   type t = string [@@deriving sexp, bin_io, compare, equal]
+
+  include functor Comparable.Make
 
   let create s = s
   let to_string t = t
@@ -112,6 +115,8 @@ module Rpc_calls = struct
   ;;
 
   let get_game_state =
+    (* TODO: Consider whether wrapping in a function is necessary here,
+       or if we could just expose the RPC directly *)
     let rpc =
       Rpc.State_rpc.create
         ~name:"game_state"

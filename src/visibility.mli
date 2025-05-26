@@ -3,6 +3,9 @@
     This module implements recursive shadow-casting algorithm to determine which tiles are
     visible from a given position, taking walls into account. *)
 
+(* TODO: The implementation actually uses ray-casting with Bresenham's algorithm,
+   not shadow-casting. Either update the docs or implement proper shadow-casting. *)
+
 open! Core
 open! Import
 
@@ -13,7 +16,7 @@ open! Import
     @param max_radius Maximum viewing distance (manhattan distance)
     @return Set of positions visible from the viewing position *)
 val compute_visible_tiles
-  :  from:Protocol.Position.t
-  -> walls:Protocol.Position.Set.t
+  :  from:Position.t
+  -> walls:Position.Set.t
   -> max_radius:int
-  -> Protocol.Position.Set.t
+  -> Position.Set.t

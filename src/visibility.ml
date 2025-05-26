@@ -37,19 +37,21 @@ let has_line_of_sight ~from ~target ~walls =
 
 let compute_visible_tiles ~from ~walls ~max_radius =
   (* First, get all positions within radius (using circular distance) *)
-  let positions_in_radius = ref [] in
   let radius_squared = max_radius * max_radius in
-  for dx = -max_radius to max_radius do
-    for dy = -max_radius to max_radius do
-      if (dx * dx) + (dy * dy) <= radius_squared
-      then (
-        let pos = { x = from.x + dx; y = from.y + dy } in
-        positions_in_radius := pos :: !positions_in_radius)
-    done
-  done;
+  let positions_in_radius =
+    List.concat_map
+      (List.range (-max_radius) (max_radius + 1))
+      ~f:(fun dx ->
+        List.filter_map
+          (List.range (-max_radius) (max_radius + 1))
+          ~f:(fun dy ->
+            if (dx * dx) + (dy * dy) <= radius_squared
+            then Some { x = from.x + dx; y = from.y + dy }
+            else None))
+  in
   (* Filter to only include positions with line of sight *)
   let visible_positions =
-    List.filter !positions_in_radius ~f:(fun target ->
+    List.filter positions_in_radius ~f:(fun target ->
       Position.equal from target || has_line_of_sight ~from ~target ~walls)
   in
   Position.Set.of_list visible_positions

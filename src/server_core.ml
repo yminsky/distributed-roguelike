@@ -3,9 +3,6 @@ open! Import
 open Async_kernel
 module Rpc = Async_rpc_kernel.Rpc
 
-(** Core server implementation that works with any RPC transport. This module only depends
-    on Async_kernel, not full Async. *)
-
 module Connection_state = struct
   type t =
     { mutable player_id : Protocol.Player_id.t option
@@ -85,6 +82,10 @@ let handle_request server_state connection_state request =
     (match Server_state.add_player server_state ~player_name with
      | Ok player ->
        connection_state.Connection_state.player_id <- Some player.id;
+       (* TODO: Consider using a proper logging library instead of printf.
+
+          ym: Yeah, you should use ppx_log, in fact.
+       *)
        printf
          "Player %s (%s) joined\n%!"
          player.name

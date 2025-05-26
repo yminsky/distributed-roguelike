@@ -2,8 +2,6 @@ open! Core
 open! Import
 open Async
 
-(** TCP server that uses Server_core for the actual game logic. *)
-
 let default_port = 8080
 
 let start_server ~port =

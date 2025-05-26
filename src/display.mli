@@ -7,11 +7,11 @@ module World_view : sig
   (** Configuration for what portion of the game world to render. *)
   type t =
     { players : Protocol.Player.t list
-    ; walls : Protocol.Position.t list
-    ; center_pos : Protocol.Position.t (** Position to center the view on *)
+    ; walls : Position.t list
+    ; center_pos : Position.t (** Position to center the view on *)
     ; view_width : int
     ; view_height : int
-    ; visible_positions : Protocol.Position.Set.t
+    ; visible_positions : Position.Set.t
     (** Positions currently visible to the viewing player *)
     }
 end
@@ -32,7 +32,7 @@ val render_ui : World_view.t -> Notty.image
     @return World_view configured for the viewing player *)
 val build_world_view
   :  players:Protocol.Player.t list
-  -> walls:Protocol.Position.t list
+  -> walls:Position.t list
   -> viewing_player_id:Protocol.Player_id.t
   -> view_width:int
   -> view_height:int
