@@ -67,60 +67,46 @@ module Room = struct
 
   (** Get all floor positions in a room *)
   let floor_positions room =
-    (* TODO: Consider using List comprehension or List.init for a more functional approach.
-
-       ym: Don't use list comprehensions, but yes, let's try out a
-       functional implementation.  *)
-    let positions = ref [] in
-    for x = room.x to room.x + room.width - 1 do
-      for y = room.y to room.y + room.height - 1 do
-        positions := { x; y } :: !positions
-      done
-    done;
-    !positions
+    List.concat_map
+      (List.range room.x (room.x + room.width))
+      ~f:(fun x ->
+        List.map (List.range room.y (room.y + room.height)) ~f:(fun y -> { x; y }))
   ;;
 end
 
 (** Create an L-shaped corridor between two positions *)
 let create_corridor ~from ~(to_ : position) =
-  let positions = ref [] in
   let x1, y1 = from.x, from.y in
   let x2, y2 = to_.x, to_.y in
   (* Randomly choose whether to go horizontal-first or vertical-first *)
   let go_horizontal_first = Random.bool () in
-  if go_horizontal_first
-  then (
-    (* Horizontal first *)
-    let dx = if x2 > x1 then 1 else -1 in
-    let x = ref x1 in
-    while !x <> x2 do
-      positions := { x = !x; y = y1 } :: !positions;
-      x := !x + dx
-    done;
-    (* Then vertical *)
-    let dy = if y2 > y1 then 1 else -1 in
-    let y = ref y1 in
-    while !y <> y2 do
-      positions := { x = x2; y = !y } :: !positions;
-      y := !y + dy
-    done)
-  else (
-    (* Vertical first *)
-    let dy = if y2 > y1 then 1 else -1 in
-    let y = ref y1 in
-    while !y <> y2 do
-      positions := { x = x1; y = !y } :: !positions;
-      y := !y + dy
-    done;
-    (* Then horizontal *)
-    let dx = if x2 > x1 then 1 else -1 in
-    let x = ref x1 in
-    while !x <> x2 do
-      positions := { x = !x; y = y2 } :: !positions;
-      x := !x + dx
-    done);
-  positions := { x = x2; y = y2 } :: !positions;
-  !positions
+  let corridor_positions =
+    if go_horizontal_first
+    then (
+      (* Horizontal first, then vertical *)
+      let horizontal_positions =
+        let xs = if x2 > x1 then List.range x1 x2 else List.range x2 x1 |> List.rev in
+        List.map xs ~f:(fun x -> { x; y = y1 })
+      in
+      let vertical_positions =
+        let ys = if y2 > y1 then List.range y1 y2 else List.range y2 y1 |> List.rev in
+        List.map ys ~f:(fun y -> { x = x2; y })
+      in
+      horizontal_positions @ vertical_positions)
+    else (
+      (* Vertical first, then horizontal *)
+      let vertical_positions =
+        let ys = if y2 > y1 then List.range y1 y2 else List.range y2 y1 |> List.rev in
+        List.map ys ~f:(fun y -> { x = x1; y })
+      in
+      let horizontal_positions =
+        let xs = if x2 > x1 then List.range x1 x2 else List.range x2 x1 |> List.rev in
+        List.map xs ~f:(fun x -> { x; y = y2 })
+      in
+      vertical_positions @ horizontal_positions)
+  in
+  (* Always include the final position *)
+  corridor_positions @ [ { x = x2; y = y2 } ]
 ;;
 
 let generate ~config ~seed =
