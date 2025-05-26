@@ -199,25 +199,31 @@ let%expect_test "visual multi-player rendering" =
     | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move Charlie down"
   in
-  (* Render the world *)
+  (* Render the world from Alice's perspective *)
   let players = Game_state.get_players state in
+  let walls = Game_state.get_walls state in
+  let alice_id = Protocol.Player_id.create "alice" in
   let world_view =
-    Display.World_view.
-      { players; center_pos = { x = 0; y = 0 }; view_width = 15; view_height = 9 }
+    Display.build_world_view
+      ~players
+      ~walls
+      ~viewing_player_id:alice_id
+      ~view_width:15
+      ~view_height:9
   in
   let image = Display.render_ui world_view in
   print_endline (Notty_test_utils.render_to_string image);
   [%expect
     {|
-           .
-           .
-           .
-           .#
+    ...............
+    ...............
+    ...............
+    ........#......
     .......@.......
-          $.
-           .
-           .
-           .
+    ......$........
+    ...............
+    ...............
+    ...............
 
     Center: (0, 0) | Players: 3 | Use WASD to move, Q to quit
     |}]

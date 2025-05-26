@@ -1,15 +1,9 @@
 (** Protocol definitions for client-server communication in LAN Rogue *)
 
 open! Core
+open! Import
 open Async
-
-module Position : sig
-  type t =
-    { x : int
-    ; y : int
-    }
-  [@@deriving sexp, bin_io, compare, equal]
-end
+module Position = Position
 
 module Direction : sig
   type t =
@@ -77,6 +71,7 @@ module Initial_state : sig
   type t =
     { your_id : Player_id.t
     ; all_players : Player.t list
+    ; walls : Position.t list
     }
   [@@deriving sexp, bin_io]
 end

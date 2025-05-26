@@ -92,7 +92,7 @@ let%expect_test "client-server communication via pipe transport" =
     Move successful
     Player player_1 moved to (0, -1)
     Player player_1 disconnected
-  |}];
+    |}];
   return ()
 ;;
 

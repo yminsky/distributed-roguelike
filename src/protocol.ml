@@ -1,13 +1,7 @@
 open! Core
+open! Import
 open Async
-
-module Position = struct
-  type t =
-    { x : int
-    ; y : int
-    }
-  [@@deriving sexp, bin_io, compare, equal]
-end
+module Position = Position
 
 module Direction = struct
   type t =
@@ -33,7 +27,7 @@ module Direction = struct
 
   let apply_to_position t pos =
     let dx, dy = to_delta t in
-    Position.{ x = pos.x + dx; y = pos.y + dy }
+    { x = pos.x + dx; y = pos.y + dy }
   ;;
 end
 
@@ -98,6 +92,7 @@ module Initial_state = struct
   type t =
     { your_id : Player_id.t
     ; all_players : Player.t list
+    ; walls : Position.t list
     }
   [@@deriving sexp, bin_io]
 end

@@ -15,6 +15,135 @@
   - Could generate different maze styles per level
   - Support for rooms and corridors
 
+#### Spawn Point Safety Problem
+
+When adding walls, we need to ensure players spawn in accessible areas. Options:
+
+1. **Designated spawn areas**: Mark specific regions as valid spawn points, guaranteed to be accessible
+2. **Flood-fill validation**: After placing walls, flood-fill from a known "inside" point to identify all reachable spaces
+3. **Wall generation that guarantees connectivity**: Use maze generation algorithms that ensure all spaces remain connected
+4. **Explicit room/corridor structure**: Define rooms and corridors as first-class concepts, then spawn only in rooms
+
+**Implementation plan**:
+- Start with hardcoded test maze with known safe spawn points
+- Add basic wall representation and collision detection
+- Later add proper maze generation with connectivity guarantees
+
+### Visibility System Design
+
+#### Core Questions
+
+1. **What should players see?**
+   - Only what's in direct line of sight?
+   - Previously explored areas ("fog of war")?
+   - Different visibility for different players?
+
+2. **How does multiplayer visibility work?**
+   - Does each player have their own visibility?
+   - Can players share visibility information?
+   - Do we show other players even if they're out of sight?
+
+#### Implementation Approaches
+
+**Option 1: Simple Radius-Based Visibility**
+```ocaml
+(* Everything within radius R of player is visible *)
+let is_visible ~player_pos ~tile_pos ~radius =
+  let dx = tile_pos.x - player_pos.x in
+  let dy = tile_pos.y - player_pos.y in
+  (dx * dx) + (dy * dy) <= (radius * radius)
+```
+- Pros: Dead simple, fast
+- Cons: Can see through walls, unrealistic
+
+**Option 2: Ray-Casting (Bresenham's Line)**
+```ocaml
+(* Cast rays from player to each tile on screen edge *)
+let cast_ray ~from ~to_pos ~walls =
+  (* Use Bresenham's algorithm to trace line *)
+  (* Stop if we hit a wall *)
+  ...
+```
+- Pros: Walls block vision properly
+- Cons: Can have artifacts, walls can "hide" tiles behind them incorrectly
+
+**Option 3: Shadow-Casting (Recommended)**
+- Cast shadows from walls to determine dark areas
+- More complex but gives best results
+- Can handle partial visibility elegantly
+- Reference: http://www.roguebasin.com/index.php?title=FOV_using_recursive_shadowcasting
+
+**Option 4: Flood-Fill Based**
+```ocaml
+(* Start at player, flood-fill to adjacent visible tiles *)
+let compute_visibility ~player_pos ~walls ~max_radius =
+  (* BFS from player position *)
+  (* Stop at walls or max radius *)
+  ...
+```
+- Pros: Simple to understand, handles corners well
+- Cons: Can be slower for large areas
+
+#### Multiplayer Considerations
+
+**Approach 1: Server Computes Per-Player Visibility**
+- Server tracks what each player can see
+- Only send visible entities in updates
+- Pros: Prevents cheating, reduces network traffic
+- Cons: More server computation
+
+**Approach 2: Client-Side Visibility**
+- Send all data, let client filter
+- Pros: Simple server, smooth client experience
+- Cons: Cheating possible, more network traffic
+
+**Approach 3: Hybrid**
+- Server sends nearby entities only (rough filtering)
+- Client does precise visibility calculation
+- Balance between security and performance
+
+#### Fog of War Options
+
+1. **No Memory**: Can only see current line-of-sight
+2. **Perfect Memory**: Once seen, always remembered
+3. **Partial Memory**: Remember terrain but not entities
+4. **Decay**: Memory fades over time
+
+#### Recommended Implementation Plan
+
+1. **Phase 1**: Simple radius visibility (ignore walls)
+   - Get the rendering pipeline working
+   - Test multiplayer with different visibility per player
+
+2. **Phase 2**: Add wall occlusion with ray-casting
+   - Implement Bresenham's line algorithm
+   - Handle edge cases (corners, diagonal walls)
+
+3. **Phase 3**: Upgrade to shadow-casting if needed
+   - Better quality visibility
+   - Handle complex scenarios
+
+4. **Phase 4**: Add fog of war
+   - Track explored areas per player
+   - Render unexplored as black, explored-but-not-visible as gray
+
+#### Data Structure Considerations
+
+```ocaml
+type visibility_state = {
+  visible_tiles : Position.Set.t;
+  explored_tiles : Position.Set.t;
+  visibility_radius : int;
+}
+
+(* Per-player visibility in game state *)
+type t = {
+  players : (Player_id.t, player_data) List.Assoc.t;
+  visibility : (Player_id.t, visibility_state) List.Assoc.t;
+  (* ... *)
+}
+```
+
 ### 2. NPC System
 - **Basic NPCs**: Stationary or wandering creatures
 - **AI Behaviors**:
@@ -307,3 +436,89 @@ let npc_think npc game_state =
 - Design the protocol to handle future features (NPCs, items, etc.)
 - Consider performance with many entities on screen
 - Plan for save/load functionality in multiplayer context
+
+## Next Steps - Post-Visibility Implementation
+
+### High Impact, Moderate Complexity
+
+#### 1. Basic Combat System
+- Add health points to players
+- Implement a simple melee attack (spacebar or 'f' key)
+- Players can damage each other when adjacent
+- Respawn system when players die
+- This would add actual gameplay beyond just exploration
+
+#### 2. NPCs/Monsters
+- Start with simple stationary monsters
+- Then add basic AI (move toward nearest player)
+- Different monster types with varying health/damage
+- Monsters spawn when dungeon is generated
+- This gives players something to do together
+
+#### 3. Items and Loot
+- Health potions that spawn in rooms
+- Simple equipment (weapons that increase damage)
+- Inventory system (even just a single equipped weapon slot)
+- Items visible on the ground as different symbols
+
+### Quality of Life Improvements
+
+#### 4. Player Communication
+- Simple chat system (press 'Enter' to type message)
+- Messages appear in a log area below the map
+- Player names shown above their characters
+- "Player X has joined/left" notifications
+
+#### 5. Better Spawn System
+- Spawn players in a guaranteed safe room
+- Ensure spawn area is always accessible
+- Maybe a special "spawn room" that's always generated
+
+#### 6. Minimap
+- Small overview map showing explored areas
+- Different from main view - shows full dungeon layout you've seen
+- Helps with navigation in larger dungeons
+
+### Technical Improvements
+
+#### 7. Save/Load Dungeon Seeds
+- Allow server to specify a seed via command line
+- Save the seed to a file for replaying same dungeon
+- Useful for testing and competitions
+
+#### 8. Performance Optimizations
+- Only send visible entities to each client
+- Delta updates instead of full state
+- Compress network messages
+
+#### 9. Configuration Files
+- Server config file for dungeon parameters
+- Client config for key bindings
+- Player preferences (color schemes, etc.)
+
+### Advanced Features
+
+#### 10. Multiple Floors
+- Stairs up/down to navigate between levels
+- Deeper levels have harder monsters
+- Persistent state across floors
+
+#### 11. Fog of War Persistence
+- Remember what areas you've explored
+- Show previously seen (but not currently visible) areas in gray
+- Shared team visibility option
+
+#### 12. Special Room Types
+- Treasure rooms with better loot
+- Monster dens with many enemies
+- Puzzle rooms with switches/doors
+- Boss rooms with unique challenges
+
+### Recommended Starting Point
+
+I'd suggest starting with **Basic Combat System** or **Simple NPCs/Monsters**. Here's why:
+
+1. **Immediate Gameplay Value**: Right now players can only walk around. Combat would add actual gameplay.
+2. **Builds on Existing Systems**: You already have collision detection and player positions - combat is a natural extension.
+3. **Multiplayer Interaction**: Players can work together against monsters or compete with each other.
+4. **Reasonable Scope**: A basic combat system can be implemented incrementally.

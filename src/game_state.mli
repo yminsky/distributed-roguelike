@@ -2,11 +2,24 @@
     spawning. *)
 
 open! Core
+open! Import
 
 type t
 
-(** Create empty game state with max_players of 10. *)
-val create : unit -> t
+(** Maze configuration options *)
+module Maze_config : sig
+  type t =
+    | No_maze (** Empty level with no walls *)
+    | Test_maze (** Simple 7x7 room for testing *)
+    | Generated_maze of Maze_generation.Config.t * int
+    (** Generated maze with config and seed *)
+    | Generated_dungeon of Dungeon_generation.Config.t * int
+    (** Generated dungeon with config and seed *)
+end
+
+(** Create game state with specified maze configuration. Defaults to No_maze if not
+    specified. *)
+val create : ?maze_config:Maze_config.t -> unit -> t
 
 (** Add a new player with unique spawn position and sigil. Returns Error if server is full
     or no sigils available. *)
@@ -28,6 +41,7 @@ val move_player
 
 val get_players : t -> Protocol.Player.t list
 val get_player : t -> player_id:Protocol.Player_id.t -> Protocol.Player.t option
+val get_walls : t -> Protocol.Position.t list
 
 (** Convert keyboard input to movement direction. Returns None for quit keys ('q') or
     unmappable input. *)

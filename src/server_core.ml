@@ -1,4 +1,5 @@
 open! Core
+open! Import
 open Async_kernel
 module Rpc = Async_rpc_kernel.Rpc
 
@@ -24,7 +25,14 @@ module Server_state = struct
     }
 
   let create () =
-    { game_state = Game_state.create (); next_player_id = 1; update_writers = ref [] }
+    let maze_config =
+      Game_state.Maze_config.Generated_dungeon
+        (Dungeon_generation.Config.default, Random.int 1000000)
+    in
+    { game_state = Game_state.create ~maze_config ()
+    ; next_player_id = 1
+    ; update_writers = ref []
+    }
   ;;
 
   let add_update_writer t writer = t.update_writers := writer :: !(t.update_writers)
@@ -119,6 +127,7 @@ let handle_state_rpc server_state connection_state connection =
     Protocol.Initial_state.
       { your_id
       ; all_players = Game_state.get_players server_state.Server_state.game_state
+      ; walls = Game_state.get_walls server_state.Server_state.game_state
       }
   in
   let reader, writer = Pipe.create () in

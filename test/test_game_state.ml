@@ -104,6 +104,276 @@ let%expect_test "key to action conversion" =
     |}]
 ;;
 
+let%expect_test "wall collision detection" =
+  let state = Game_state.create ~maze_config:Test_maze () in
+  let state, player =
+    match
+      Game_state.add_player
+        state
+        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_name:"Player"
+    with
+    | Ok result -> result
+    | Error _ -> failwith "Failed to add player"
+  in
+  printf "Player spawned at (%d, %d)\n" player.position.x player.position.y;
+  (* Try to move up multiple times to hit a wall *)
+  let rec move_until_wall state direction count =
+    if count > 10
+    then state
+    else (
+      match
+        Game_state.move_player
+          state
+          ~player_id:(Protocol.Player_id.create "player1")
+          ~direction
+      with
+      | Ok (new_state, _) ->
+        printf "Moved %s successfully\n" (Protocol.Direction.to_string direction);
+        move_until_wall new_state direction (count + 1)
+      | Error msg ->
+        printf "Movement blocked: %s\n" msg;
+        state)
+  in
+  (* First move right to position (1, 0), then up to hit wall at (1, -3) *)
+  let state =
+    match
+      Game_state.move_player
+        state
+        ~player_id:(Protocol.Player_id.create "player1")
+        ~direction:Right
+    with
+    | Ok (new_state, _) ->
+      printf "Moved Right successfully\n";
+      new_state
+    | Error msg ->
+      printf "Failed to move right: %s\n" msg;
+      state
+  in
+  (* Now try moving up until we hit the wall at (1, -3) *)
+  let _ = move_until_wall state Up 0 in
+  [%expect
+    {|
+    Player spawned at (0, 0)
+    Moved Right successfully
+    Moved Up successfully
+    Moved Up successfully
+    Movement blocked: Cannot move into a wall
+    |}]
+;;
+
+let%expect_test "visual rendering with walls" =
+  let state = Game_state.create ~maze_config:Test_maze () in
+  let state, _ =
+    match
+      Game_state.add_player
+        state
+        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_name:"Player"
+    with
+    | Ok result -> result
+    | Error _ -> failwith "Failed to add player"
+  in
+  let render_state state =
+    Notty_test_utils.render_state_to_string
+      ~width:50
+      ~height:21
+      state
+      ~player_id:(Protocol.Player_id.create "player1")
+  in
+  print_endline (render_state state);
+  [%expect
+    {|
+                             .
+                            ...
+                            ...
+                            ...
+                            ...
+                             .
+                             .
+                          ###.###
+                          #.....#
+                    ....  #.....#  ....
+                   ..........@..........
+                    ....  #.....#  ....
+                          #.....#
+                          ###.###
+                             .
+                             .
+                            ...
+                            ...
+                            ...
+                            ...
+                             .
+
+    Center: (0, 0) | Players: 1 | Use WASD to move, Q to quit
+    |}]
+;;
+
+let%expect_test "debug visibility symmetry" =
+  let state = Game_state.create ~maze_config:Test_maze () in
+  let state, _ =
+    match
+      Game_state.add_player
+        state
+        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_name:"Player"
+    with
+    | Ok result -> result
+    | Error _ -> failwith "Failed to add player"
+  in
+  (* Test with a smaller view to focus on the issue *)
+  let render_state state =
+    Notty_test_utils.render_state_to_string
+      ~width:25
+      ~height:15
+      state
+      ~player_id:(Protocol.Player_id.create "player1")
+  in
+  print_endline (render_state state);
+  (* Let's check what positions are actually visible *)
+  let walls = Game_state.get_walls state in
+  let visible =
+    Visibility.compute_visible_tiles
+      ~from:Protocol.Position.{ x = 0; y = 0 }
+      ~walls:(Protocol.Position.Set.of_list walls)
+      ~max_radius:10
+  in
+  (* Check specific positions that should be symmetrically visible *)
+  let check_pos x y =
+    let pos = Protocol.Position.{ x; y } in
+    let is_visible = Set.mem visible pos in
+    printf "(%2d,%2d): %s\n" x y (if is_visible then "visible" else "blocked")
+  in
+  printf "\nChecking key positions:\n";
+  (* Check the openings *)
+  check_pos (-5) 0;
+  (* Left opening *)
+  check_pos 5 0;
+  (* Right opening *)
+  check_pos 0 (-3);
+  (* Top opening *)
+  check_pos 0 3;
+  (* Bottom opening *)
+  (* Check beyond openings *)
+  check_pos (-6) 0;
+  (* Beyond left opening *)
+  check_pos 6 0;
+  (* Beyond right opening *)
+  check_pos 0 (-4);
+  (* Beyond top opening *)
+  check_pos 0 4;
+  (* Beyond bottom opening *)
+  (* Check diagonal visibility through openings *)
+  printf "\nChecking diagonal visibility:\n";
+  check_pos (-6) 1;
+  (* Should this be visible? *)
+  check_pos (-6) (-1);
+  check_pos 6 1;
+  check_pos 6 (-1);
+  check_pos 1 (-4);
+  check_pos (-1) (-4);
+  check_pos 1 4;
+  check_pos (-1) 4;
+  [%expect
+    {|
+               ...
+               ...
+                .
+                .
+             ###.###
+             #.....#
+       ....  #.....#  ....
+      ..........@..........
+       ....  #.....#  ....
+             #.....#
+             ###.###
+                .
+                .
+               ...
+               ...
+
+    Center: (0, 0) | Players: 1 | Use WASD to move, Q to quit
+
+    Checking key positions:
+    (-5, 0): visible
+    ( 5, 0): visible
+    ( 0,-3): visible
+    ( 0, 3): visible
+    (-6, 0): visible
+    ( 6, 0): visible
+    ( 0,-4): visible
+    ( 0, 4): visible
+
+    Checking diagonal visibility:
+    (-6, 1): visible
+    (-6,-1): visible
+    ( 6, 1): visible
+    ( 6,-1): visible
+    ( 1,-4): blocked
+    (-1,-4): blocked
+    ( 1, 4): blocked
+    (-1, 4): blocked
+    |}]
+;;
+
+let%expect_test "visibility blocked by walls" =
+  let state = Game_state.create ~maze_config:Test_maze () in
+  let state, _ =
+    match
+      Game_state.add_player
+        state
+        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_name:"Player"
+    with
+    | Ok result -> result
+    | Error _ -> failwith "Failed to add player"
+  in
+  (* Move player to (-4, 0) - just inside the left wall opening *)
+  let state = ref state in
+  for _ = 1 to 4 do
+    state
+    := match
+         Game_state.move_player
+           !state
+           ~player_id:(Protocol.Player_id.create "player1")
+           ~direction:Left
+       with
+       | Ok (s, _) -> s
+       | Error _ -> !state
+  done;
+  printf "Player moved to position near wall\n";
+  let render_state state =
+    Notty_test_utils.render_state_to_string
+      ~width:25
+      ~height:15
+      state
+      ~player_id:(Protocol.Player_id.create "player1")
+  in
+  print_endline (render_state !state);
+  [%expect
+    {|
+    Player moved to position near wall
+         .........
+        ..........
+        .........
+       ..........
+       ..........     #
+       ..........#  ...#
+       ..........#.....#
+      ..........@..........
+       ..........#.....#
+       ..........#  ...#
+       ..........     #
+       ..........
+        .........
+        ..........
+         .........
+
+    Center: (-4, 0) | Players: 1 | Use WASD to move, Q to quit
+    |}]
+;;
+
 let%expect_test "visual state transitions" =
   let render_state state =
     Notty_test_utils.render_state_to_string
@@ -162,47 +432,47 @@ let%expect_test "visual state transitions" =
   [%expect
     {|
     === Initial State ===
-    .         .         .         .         .         .
-    .         .         .         .         .         .
-    .         .         .         .         .         .
-    .         .         .         .         .         .
-    .         .         .         .         .         .
-    ..............................@.............................
-    .         .         .         .         .         .
-    .         .         .         .         .         .
-    .         .         .         .         .         .
-    .         .         .         .         .         .
-    .         .         .         .         .         .
+                          .................
+                         ...................
+                         ...................
+                         ...................
+                         ...................
+                        ..........@..........
+                         ...................
+                         ...................
+                         ...................
+                         ...................
+                          .................
 
     Center: (0, 0) | Players: 1 | Use WASD to move, Q to quit
 
     === After moving right twice ===
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-    ..............................@.............................
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
+                          .................
+                         ...................
+                         ...................
+                         ...................
+                         ...................
+                        ..........@..........
+                         ...................
+                         ...................
+                         ...................
+                         ...................
+                          .................
 
     Center: (2, 0) | Players: 1 | Use WASD to move, Q to quit
 
     === After moving down once ===
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-    ............................................................
-            .         .         . @       .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
-            .         .         .         .         .         .
+                          .................
+                         ...................
+                         ...................
+                         ...................
+                         ...................
+                        ..........@..........
+                         ...................
+                         ...................
+                         ...................
+                         ...................
+                          .................
 
     Center: (2, 1) | Players: 1 | Use WASD to move, Q to quit
     |}]

@@ -31,15 +31,49 @@ dune exec ./bin/game_client.exe -- -server localhost
 # Format code (uses janestreet profile)
 dune build @fmt --auto-promote
 
+# Or use the simpler promote command after building
+dune build @fmt && dune promote
+
 # Run a specific test file
 dune exec test/<test_name>.exe
 ```
 
+## Development Modes
+
+When working on new features, use one of these two modes:
+
+### Design Mode
+When designing new modules or interfaces:
+1. Start by writing `.mli` files to define the interface
+2. Show the interface to the user for feedback
+3. Run only: `dune build @check @fmt && dune promote`
+4. Don't implement `.ml` files yet - focus on getting the API right
+
+### Implementation Mode
+When implementing already-designed interfaces:
+1. Write the `.ml` implementations
+2. Write or update tests
+3. Run full build: `dune build @default @runtest @fmt && dune promote`
+4. Ensure all tests pass before committing
+
 ## Development Tips
+
+- **Always format code before committing**: Run `dune build @fmt` followed by
+  `dune promote` (or `dune build @fmt --auto-promote`) to ensure consistent
+  code formatting using the janestreet profile.
 
 - When making types abstract in `.mli` files, use `dune build @check` to find
   all places where the implementation details are used. This is more reliable
   than text-based searches.
+  
+- **Design-first approach**: For complex features, start in Design Mode to get
+  the interfaces right before diving into implementation. This helps catch
+  design issues early and makes the codebase more maintainable.
+
+- **Use `include functor` syntax**: When including Jane Street functors like
+  `Comparable.Make`, use the concise `include functor Comparable.Make` syntax
+  instead of manually creating a module argument. This feature automatically
+  uses the surrounding module's type `t` and derived functions.
 
 ## Architecture
 
