@@ -6,7 +6,7 @@ module Rpc = Async_rpc_kernel.Rpc
 
 module Connection_state = struct
   type t =
-    { mutable player_id : Protocol.Player_id.t option
+    { mutable player_id : Player_id.t option
     ; mutable connection : Rpc.Connection.t option
     }
 
@@ -48,7 +48,7 @@ module Server_state = struct
   ;;
 
   let add_player t ~player_name =
-    let player_id = Protocol.Player_id.of_int t.next_player_id in
+    let player_id = Player_id.of_int t.next_player_id in
     t.next_player_id <- t.next_player_id + 1;
     match Game_state.add_player t.game_state ~player_id ~player_name with
     | Ok (new_game_state, player) ->
@@ -87,7 +87,7 @@ let handle_request server_state connection_state request =
          server_state.log
            "Player joined"
            ~player_name:player.name
-           ~player_id:(Protocol.Player_id.to_string player.id)];
+           ~player_id:(Player_id.to_string player.id)];
        return (Ok ())
      | Error msg ->
        [%log.error server_state.log "Join failed" ~reason:msg];
@@ -101,8 +101,8 @@ let handle_request server_state connection_state request =
           [%log.info
             server_state.log
               "Player moved"
-              ~player_id:(Protocol.Player_id.to_string player_id)
-              ~direction:(Protocol.Direction.to_string direction)];
+              ~player_id:(Player_id.to_string player_id)
+              ~direction:(Direction.to_string direction)];
           return (Ok ())
         | Error msg ->
           [%log.error server_state.log "Move failed" ~reason:msg];
@@ -114,9 +114,7 @@ let handle_request server_state connection_state request =
        let _ = Server_state.remove_player server_state ~player_id in
        connection_state.Connection_state.player_id <- None;
        [%log.info
-         server_state.log
-           "Player left"
-           ~player_id:(Protocol.Player_id.to_string player_id)];
+         server_state.log "Player left" ~player_id:(Player_id.to_string player_id)];
        return (Ok ()))
 ;;
 
@@ -127,7 +125,7 @@ let handle_state_rpc server_state connection_state connection =
     | None ->
       (* TODO: This is broken - we shouldn't create a fake player ID here.
          The protocol should be changed so that your_id is optional in Initial_state. *)
-      Protocol.Player_id.of_int 0
+      Player_id.of_int 0
   in
   let initial_state =
     Protocol.Initial_state.
@@ -187,8 +185,6 @@ let serve_with_transport server_state (transport : Rpc.Transport.t) =
      | Some player_id ->
        ignore (Server_state.remove_player server_state ~player_id : bool);
        [%log.info
-         server_state.log
-           "Player disconnected"
-           ~player_id:(Protocol.Player_id.to_string player_id)]);
+         server_state.log "Player disconnected" ~player_id:(Player_id.to_string player_id)]);
     return ()
 ;;

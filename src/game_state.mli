@@ -25,24 +25,24 @@ val create : ?maze_config:Maze_config.t -> unit -> t
     or no sigils available. *)
 val add_player
   :  t
-  -> player_id:Protocol.Player_id.t
+  -> player_id:Player_id.t
   -> player_name:string
-  -> (t * Protocol.Player.t, string) Result.t
+  -> (t * Player.t, string) Result.t
 
-val remove_player : t -> player_id:Protocol.Player_id.t -> t
+val remove_player : t -> player_id:Player_id.t -> t
 
 (** Move a player in the given direction. Returns Error if player not found or collision
     detected. On success, returns the new state and the update to broadcast. *)
 val move_player
   :  t
-  -> player_id:Protocol.Player_id.t
-  -> direction:Protocol.Direction.t
+  -> player_id:Player_id.t
+  -> direction:Direction.t
   -> (t * Protocol.Update.t, string) Result.t
 
-val get_players : t -> Protocol.Player.t list
-val get_player : t -> player_id:Protocol.Player_id.t -> Protocol.Player.t option
+val get_players : t -> Player.t list
+val get_player : t -> player_id:Player_id.t -> Player.t option
 val get_walls : t -> Position.t list
 
 (** Convert keyboard input to movement direction. Returns None for quit keys ('q') or
     unmappable input. *)
-val key_to_action : Protocol.Key_input.t -> Protocol.Direction.t option
+val key_to_action : Key_input.t -> Direction.t option

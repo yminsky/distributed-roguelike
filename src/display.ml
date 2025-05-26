@@ -3,7 +3,7 @@ open! Import
 
 module World_view = struct
   type t =
-    { players : Protocol.Player.t list
+    { players : Player.t list
     ; walls : Position.t list
     ; center_pos : Position.t
     ; view_width : int
@@ -89,11 +89,11 @@ let default_visibility_radius = 25
 let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height =
   let viewing_player =
     List.find players ~f:(fun player ->
-      Protocol.Player_id.equal player.Protocol.Player.id viewing_player_id)
+      Player_id.equal player.Player.id viewing_player_id)
   in
   let center_pos =
     match viewing_player with
-    | Some player -> player.Protocol.Player.position
+    | Some player -> player.Player.position
     | None -> { x = 0; y = 0 }
   in
   let visible_positions =
@@ -101,7 +101,7 @@ let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height
     | None -> Position.Set.empty
     | Some player ->
       Visibility.compute_visible_tiles
-        ~from:player.Protocol.Player.position
+        ~from:player.Player.position
         ~walls:(Position.Set.of_list walls)
         ~max_radius:default_visibility_radius
   in

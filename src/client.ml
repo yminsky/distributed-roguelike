@@ -7,8 +7,8 @@ let default_port = 8080
 
 type game_client =
   { connection : Rpc.Connection.t
-  ; mutable your_id : Protocol.Player_id.t
-  ; mutable all_players : Protocol.Player.t list
+  ; mutable your_id : Player_id.t
+  ; mutable all_players : Player.t list
   ; mutable walls : Position.t list
   ; term : Notty_async.Term.t
   ; log : Async_log_kernel.Log.t
@@ -53,7 +53,7 @@ let handle_input client =
       return `Quit
     | key, [] ->
       (* Movement and other keys without modifiers *)
-      (match Protocol.Key_input.of_notty_key key with
+      (match Key_input.of_notty_key key with
        | Some key_input ->
          (match Game_state.key_to_action key_input with
           | Some direction -> handle_movement_key direction
@@ -97,14 +97,14 @@ let handle_state_updates client =
     | `Ok (Player_moved { player_id; new_position }) ->
       client.all_players
       <- List.map client.all_players ~f:(fun player ->
-           if Protocol.Player_id.equal player.id player_id
+           if Player_id.equal player.id player_id
            then { player with position = new_position }
            else player);
       loop ()
     | `Ok (Player_left player_id) ->
       client.all_players
       <- List.filter client.all_players ~f:(fun player ->
-           not (Protocol.Player_id.equal player.id player_id));
+           not (Player_id.equal player.id player_id));
       loop ()
   in
   loop ()

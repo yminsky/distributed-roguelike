@@ -50,7 +50,7 @@ let test_client_server_with_pipe_transport () =
   in
   printf
     "Got initial state. Your ID: %s, Players: %d\n"
-    (Protocol.Player_id.to_string initial_state.your_id)
+    (Player_id.to_string initial_state.your_id)
     (List.length initial_state.all_players);
   (* Test: Move player *)
   let%bind move_result =
@@ -72,7 +72,7 @@ let test_client_server_with_pipe_transport () =
       | Protocol.Update.Player_moved { player_id; new_position } ->
         printf
           "Player %s moved to (%d, %d)\n"
-          (Protocol.Player_id.to_string player_id)
+          (Player_id.to_string player_id)
           new_position.x
           new_position.y
       | _ -> printf "Got other update\n"));
@@ -113,7 +113,7 @@ let%expect_test "server handles client join directly" =
    | Ok () ->
      printf "Join successful\n";
      (match Server_core.Connection_state.player_id connection_state with
-      | Some id -> printf "Player ID set to: %s\n" (Protocol.Player_id.to_string id)
+      | Some id -> printf "Player ID set to: %s\n" (Player_id.to_string id)
       | None -> printf "Error: Player ID not set\n")
    | Error msg -> printf "Join failed: %s\n" msg);
   [%expect
