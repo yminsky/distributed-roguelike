@@ -56,6 +56,8 @@ end
 module Player_id = struct
   type t = string [@@deriving sexp, bin_io, compare, equal]
 
+  include functor Comparable.Make
+
   let create s = s
   let to_string t = t
 end

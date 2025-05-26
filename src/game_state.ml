@@ -9,10 +9,8 @@ module Maze_config = struct
     | Generated_dungeon of Dungeon_generation.Config.t * int
 end
 
-module Player_id_map = Map.Make (Protocol.Player_id)
-
 type t =
-  { players : Protocol.Player.t Player_id_map.t
+  { players : Protocol.Player.t Protocol.Player_id.Map.t
   ; max_players : int
   ; walls : Position.t list
   }
@@ -52,7 +50,7 @@ let create ?(maze_config = Maze_config.No_maze) () =
     | Generated_dungeon (config, seed) ->
       Dungeon_generation.generate ~config ~seed |> Set.to_list
   in
-  { players = Player_id_map.empty; max_players = default_max_players; walls }
+  { players = Protocol.Player_id.Map.empty; max_players = default_max_players; walls }
 ;;
 
 let player_sigils = [| '@'; '#'; '$'; '%'; '&'; '*'; '+'; '='; '?'; '!' |]
