@@ -89,8 +89,6 @@ let handle_state_updates client =
   (* Initialize client state with the initial game state from server *)
   client.your_id <- initial_state.your_id;
   client.all_players <- initial_state.all_players;
-  (* TODO: walls are set once during initialization but never updated -
-     consider if walls should be dynamic in the future *)
   let rec loop () =
     let%bind result = Pipe.read pipe in
     match result with

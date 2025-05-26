@@ -2,8 +2,6 @@ open! Core
 open! Import
 
 module Config = struct
-  (* TODO: Consider whether Config.t should expose its fields in the .mli
-     or remain abstract as it currently is. *)
   type t =
     { width : int
     ; height : int
@@ -53,7 +51,6 @@ let generate ~config ~seed =
     done
   done;
   (* Carve out the maze using recursive backtracker *)
-  (* TODO: Consider using a more functional approach instead of refs *)
   let visited = ref Position.Set.empty in
   let is_valid_cell pos =
     pos.x >= 1

@@ -4,9 +4,6 @@
 open! Core
 open! Import
 
-(* TODO: Consider exposing a visibility function that takes a player_id and returns
-   what that player can see, integrating with the visibility module *)
-
 type t
 
 (** Maze configuration options *)

@@ -32,7 +32,6 @@ module Key_input : sig
 end
 
 module Player_id : sig
-  (* TODO: This is correctly abstract in the .mli - good! *)
   type t [@@deriving sexp, bin_io, compare, equal]
 
   val create : string -> t

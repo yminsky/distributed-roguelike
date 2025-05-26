@@ -37,7 +37,11 @@ let has_line_of_sight ~from ~target ~walls =
 
 let compute_visible_tiles ~from ~walls ~max_radius =
   (* First, get all positions within radius (using circular distance) *)
-  (* TODO: Consider using List.init or a more functional approach instead of ref *)
+  (* TODO: Consider using List.init or a more functional approach instead of ref.
+
+     ym: Sure, try it and see if it looks better.  But don't change it
+     if the code isn't more readable. This kind of local mutable state
+     is pretty harmless. *)
   let positions_in_radius = ref [] in
   let radius_squared = max_radius * max_radius in
   for dx = -max_radius to max_radius do
