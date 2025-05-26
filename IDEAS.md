@@ -210,7 +210,7 @@ This unification has several advantages:
 - Could even allow for interesting mechanics like mind control or
   possession where a player controls an NPC
 
-**Option 1: First-Class Module Approach (Revised)**
+**Option 1: First-Class Module Approach**
 
 Based on the fundamental needs, here's a minimal interface:
 
@@ -353,7 +353,10 @@ let npc_think npc game_state =
   | Minotaur _ -> Speak_cryptically
 ```
 
-**Recommendation**: Start with Option 3 (simple variants) and migrate to Option 1 (first-class modules) once we have more NPC types and complex behaviors. The first-class module approach provides better extensibility but might be overengineering for initial implementation.
+**Recommendation**: Start with Option 3 (simple variants) and migrate
+to Option 1 (first-class modules) once we have more NPC types and
+complex behaviors. The first-class module approach provides better
+extensibility but might be overengineering for initial implementation.
 
 **Key Design Principles**:
 1. NPCs should be deterministic given the same game state (for testing)
