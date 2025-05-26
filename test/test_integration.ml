@@ -4,6 +4,9 @@ open Lan_rogue
 
 (** Integration tests using pipe transport for deterministic client-server testing. *)
 
+(* Create a test log with stable output for testing *)
+let test_log = Log.For_testing.create `Info ~map_output:(fun s -> s)
+
 let test_client_server_with_pipe_transport () =
   (* Create a pair of transports connected by pipes *)
   let client_transport, server_transport =
@@ -11,7 +14,7 @@ let test_client_server_with_pipe_transport () =
       Async_rpc_kernel.Pipe_transport.Kind.bigstring
   in
   (* Set up server *)
-  let server_state = Server_core.Server_state.create () in
+  let server_state = Server_core.Server_state.create test_log in
   (* Start server in the background *)
   don't_wait_for (Server_core.serve_with_transport server_state server_transport);
   (* Create client connection *)
@@ -84,21 +87,21 @@ let%expect_test "client-server communication via pipe transport" =
   let%bind () = test_client_server_with_pipe_transport () in
   [%expect
     {|
-    RPC connection established
-    Player TestPlayer (player_1) joined
+    "RPC connection established"
+    ("Player joined"(player_name TestPlayer)(player_id player_1))
     Join successful
     Got initial state. Your ID: player_1, Players: 1
-    Player player_1 moved Up
+    ("Player moved"(player_id player_1)(direction Up))
     Move successful
     Player player_1 moved to (0, -1)
-    Player player_1 disconnected
+    ("Player disconnected"(player_id player_1))
     |}];
   return ()
 ;;
 
 (** The direct server tests from before still work *)
 let%expect_test "server handles client join directly" =
-  let server_state = Server_core.Server_state.create () in
+  let server_state = Server_core.Server_state.create test_log in
   let connection_state = Server_core.Connection_state.create () in
   let%bind response =
     Server_core.handle_request
@@ -115,9 +118,9 @@ let%expect_test "server handles client join directly" =
    | Error msg -> printf "Join failed: %s\n" msg);
   [%expect
     {|
-    Player Alice (player_1) joined
+    ("Player joined"(player_name Alice)(player_id player_1))
     Join successful
     Player ID set to: player_1
-  |}];
+    |}];
   return ()
 ;;

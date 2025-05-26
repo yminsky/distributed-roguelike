@@ -5,7 +5,7 @@ open Async
 let default_port = 8080
 
 let start_server ~log ~port =
-  let server_state = Server_core.Server_state.create () in
+  let server_state = Server_core.Server_state.create log in
   [%log.info log "Starting game server" (port : int)];
   let%bind server =
     Tcp.Server.create

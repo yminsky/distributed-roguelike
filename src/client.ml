@@ -11,7 +11,7 @@ type game_client =
   ; mutable all_players : Protocol.Player.t list
   ; mutable walls : Position.t list
   ; term : Notty_async.Term.t
-  ; log : Log.t
+  ; log : Async_log_kernel.Log.t
   }
 
 let send_request client request =

@@ -18,7 +18,7 @@ end
 module Server_state : sig
   type t
 
-  val create : unit -> t
+  val create : Async_log_kernel.Log.t -> t
 end
 
 val handle_request
