@@ -3,10 +3,6 @@ open! Import
 open Async_kernel
 module Rpc = Async_rpc_kernel.Rpc
 
-(* TODO: This module comment should be in the .mli file, not the .ml file *)
-
-(** Core server implementation that works with any RPC transport. This module only depends
-    on Async_kernel, not full Async. *)
 module Connection_state = struct
   type t =
     { mutable player_id : Protocol.Player_id.t option
