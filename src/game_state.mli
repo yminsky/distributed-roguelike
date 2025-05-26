@@ -41,7 +41,7 @@ val move_player
 
 val get_players : t -> Protocol.Player.t list
 val get_player : t -> player_id:Protocol.Player_id.t -> Protocol.Player.t option
-val get_walls : t -> Protocol.Position.t list
+val get_walls : t -> Position.t list
 
 (** Convert keyboard input to movement direction. Returns None for quit keys ('q') or
     unmappable input. *)

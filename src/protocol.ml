@@ -1,7 +1,6 @@
 open! Core
 open! Import
 open Async
-module Position = Position
 
 module Direction = struct
   type t =

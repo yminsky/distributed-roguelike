@@ -2,12 +2,6 @@ open! Core
 open! Import
 
 module World_view = struct
-  (* TODO: Notice the inconsistency - .mli uses Protocol.Position.t but .ml uses Position.t
-     They're the same type but should be consistent
-
-     ym: Indeed. We should render this Player.t below, but also,
-     Player shouldn't be re-exported from Protocol at all! Let's
-     remove that.  *)
   type t =
     { players : Protocol.Player.t list
     ; walls : Position.t list

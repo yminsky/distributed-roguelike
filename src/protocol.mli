@@ -3,7 +3,6 @@
 open! Core
 open! Import
 open Async
-module Position = Position
 
 module Direction : sig
   type t =

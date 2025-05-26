@@ -3,9 +3,6 @@
 open! Core
 open! Import
 
-(* TODO: This module currently depends on Protocol.Position when it should 
-   probably just use Position directly to reduce coupling. *)
-
 (** Configuration for maze generation using recursive backtracker algorithm.
 
     The recursive backtracker creates perfect mazes (no loops) with long, winding
@@ -50,7 +47,7 @@ end
     @param config Generation parameters
     @param seed Random seed for reproducible generation
     @return Set of wall positions *)
-val generate : config:Config.t -> seed:int -> Protocol.Position.Set.t
+val generate : config:Config.t -> seed:int -> Position.Set.t
 
 (** Other maze generation algorithms that could be implemented in the future:
 

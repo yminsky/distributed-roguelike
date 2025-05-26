@@ -9,9 +9,6 @@
 open! Core
 open! Import
 
-(* TODO: This module uses Protocol.Position.t instead of just Position.t,
-   creating unnecessary coupling to the Protocol module. *)
-
 (** Compute visible tiles from a given position using shadow-casting.
 
     @param from The viewing position
@@ -19,7 +16,7 @@ open! Import
     @param max_radius Maximum viewing distance (manhattan distance)
     @return Set of positions visible from the viewing position *)
 val compute_visible_tiles
-  :  from:Protocol.Position.t
-  -> walls:Protocol.Position.Set.t
+  :  from:Position.t
+  -> walls:Position.Set.t
   -> max_radius:int
-  -> Protocol.Position.Set.t
+  -> Position.Set.t
