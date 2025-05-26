@@ -88,13 +88,13 @@ let%expect_test "client-server communication via pipe transport" =
   [%expect
     {|
     "RPC connection established"
-    ("Player joined"(player_name TestPlayer)(player_id player_1))
+    ("Player joined"(player_name TestPlayer)(player_id 1))
     Join successful
-    Got initial state. Your ID: player_1, Players: 1
-    ("Player moved"(player_id player_1)(direction Up))
+    Got initial state. Your ID: 1, Players: 1
+    ("Player moved"(player_id 1)(direction Up))
     Move successful
-    Player player_1 moved to (0, -1)
-    ("Player disconnected"(player_id player_1))
+    Player 1 moved to (0, -1)
+    ("Player disconnected"(player_id 1))
     |}];
   return ()
 ;;
@@ -118,9 +118,9 @@ let%expect_test "server handles client join directly" =
    | Error msg -> printf "Join failed: %s\n" msg);
   [%expect
     {|
-    ("Player joined"(player_name Alice)(player_id player_1))
+    ("Player joined"(player_name Alice)(player_id 1))
     Join successful
-    Player ID set to: player_1
+    Player ID set to: 1
     |}];
   return ()
 ;;

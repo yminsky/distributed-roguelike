@@ -54,12 +54,13 @@ module Key_input = struct
 end
 
 module Player_id = struct
-  type t = string [@@deriving sexp, bin_io, compare, equal]
+  type t = int [@@deriving sexp, bin_io, compare, equal]
 
   include functor Comparable.Make
 
-  let create s = s
-  let to_string t = t
+  let of_int i = i
+  let to_int t = t
+  let to_string t = Int.to_string t
 end
 
 module Player = struct

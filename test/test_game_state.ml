@@ -8,7 +8,7 @@ let%expect_test "game state creation and movement" =
     match
       Game_state.add_player
         initial_state
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~player_name:"Player"
     with
     | Ok result -> result
@@ -23,14 +23,14 @@ let%expect_test "game state creation and movement" =
     match
       Game_state.move_player
         state
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~direction:Right
     with
     | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move right"
   in
   let player_after_right =
-    Game_state.get_player moved_right ~player_id:(Protocol.Player_id.create "player1")
+    Game_state.get_player moved_right ~player_id:(Protocol.Player_id.of_int 1)
     |> Option.value_exn
   in
   printf
@@ -44,14 +44,14 @@ let%expect_test "game state creation and movement" =
     match
       Game_state.move_player
         moved_right
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~direction:Up
     with
     | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move up"
   in
   let player_after_up =
-    Game_state.get_player moved_up ~player_id:(Protocol.Player_id.create "player1")
+    Game_state.get_player moved_up ~player_id:(Protocol.Player_id.of_int 1)
     |> Option.value_exn
   in
   printf
@@ -110,7 +110,7 @@ let%expect_test "wall collision detection" =
     match
       Game_state.add_player
         state
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~player_name:"Player"
     with
     | Ok result -> result
@@ -123,10 +123,7 @@ let%expect_test "wall collision detection" =
     then state
     else (
       match
-        Game_state.move_player
-          state
-          ~player_id:(Protocol.Player_id.create "player1")
-          ~direction
+        Game_state.move_player state ~player_id:(Protocol.Player_id.of_int 1) ~direction
       with
       | Ok (new_state, _) ->
         printf "Moved %s successfully\n" (Protocol.Direction.to_string direction);
@@ -140,7 +137,7 @@ let%expect_test "wall collision detection" =
     match
       Game_state.move_player
         state
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~direction:Right
     with
     | Ok (new_state, _) ->
@@ -168,7 +165,7 @@ let%expect_test "visual rendering with walls" =
     match
       Game_state.add_player
         state
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~player_name:"Player"
     with
     | Ok result -> result
@@ -179,7 +176,7 @@ let%expect_test "visual rendering with walls" =
       ~width:50
       ~height:21
       state
-      ~player_id:(Protocol.Player_id.create "player1")
+      ~player_id:(Protocol.Player_id.of_int 1)
   in
   print_endline (render_state state);
   [%expect
@@ -216,7 +213,7 @@ let%expect_test "debug visibility symmetry" =
     match
       Game_state.add_player
         state
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~player_name:"Player"
     with
     | Ok result -> result
@@ -228,7 +225,7 @@ let%expect_test "debug visibility symmetry" =
       ~width:25
       ~height:15
       state
-      ~player_id:(Protocol.Player_id.create "player1")
+      ~player_id:(Protocol.Player_id.of_int 1)
   in
   print_endline (render_state state);
   (* Let's check what positions are actually visible *)
@@ -323,7 +320,7 @@ let%expect_test "visibility blocked by walls" =
     match
       Game_state.add_player
         state
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~player_name:"Player"
     with
     | Ok result -> result
@@ -336,7 +333,7 @@ let%expect_test "visibility blocked by walls" =
     := match
          Game_state.move_player
            !state
-           ~player_id:(Protocol.Player_id.create "player1")
+           ~player_id:(Protocol.Player_id.of_int 1)
            ~direction:Left
        with
        | Ok (s, _) -> s
@@ -348,7 +345,7 @@ let%expect_test "visibility blocked by walls" =
       ~width:25
       ~height:15
       state
-      ~player_id:(Protocol.Player_id.create "player1")
+      ~player_id:(Protocol.Player_id.of_int 1)
   in
   print_endline (render_state !state);
   [%expect
@@ -380,7 +377,7 @@ let%expect_test "visual state transitions" =
       ~width:60
       ~height:11
       state
-      ~player_id:(Protocol.Player_id.create "player1")
+      ~player_id:(Protocol.Player_id.of_int 1)
   in
   printf "=== Initial State ===\n";
   let state = Game_state.create () in
@@ -388,7 +385,7 @@ let%expect_test "visual state transitions" =
     match
       Game_state.add_player
         state
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~player_name:"Player"
     with
     | Ok result -> result
@@ -400,7 +397,7 @@ let%expect_test "visual state transitions" =
     match
       Game_state.move_player
         state
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~direction:Right
     with
     | Ok (s, _update) -> s
@@ -410,7 +407,7 @@ let%expect_test "visual state transitions" =
     match
       Game_state.move_player
         state
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~direction:Right
     with
     | Ok (s, _update) -> s
@@ -422,7 +419,7 @@ let%expect_test "visual state transitions" =
     match
       Game_state.move_player
         state
-        ~player_id:(Protocol.Player_id.create "player1")
+        ~player_id:(Protocol.Player_id.of_int 1)
         ~direction:Down
     with
     | Ok (s, _update) -> s

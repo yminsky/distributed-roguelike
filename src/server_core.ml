@@ -48,9 +48,7 @@ module Server_state = struct
   ;;
 
   let add_player t ~player_name =
-    let player_id =
-      Protocol.Player_id.create (Printf.sprintf "player_%d" t.next_player_id)
-    in
+    let player_id = Protocol.Player_id.of_int t.next_player_id in
     t.next_player_id <- t.next_player_id + 1;
     match Game_state.add_player t.game_state ~player_id ~player_name with
     | Ok (new_game_state, player) ->
@@ -126,7 +124,10 @@ let handle_state_rpc server_state connection_state connection =
   let your_id =
     match connection_state.Connection_state.player_id with
     | Some id -> id
-    | None -> Protocol.Player_id.create "" (* Not joined yet *)
+    | None ->
+      (* TODO: This is broken - we shouldn't create a fake player ID here.
+         The protocol should be changed so that your_id is optional in Initial_state. *)
+      Protocol.Player_id.of_int 0
   in
   let initial_state =
     Protocol.Initial_state.

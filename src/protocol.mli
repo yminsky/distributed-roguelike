@@ -35,7 +35,8 @@ module Player_id : sig
 
   include Comparable.S with type t := t
 
-  val create : string -> t
+  val of_int : int -> t
+  val to_int : t -> int
   val to_string : t -> string
 end
 
