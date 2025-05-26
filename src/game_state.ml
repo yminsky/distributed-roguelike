@@ -10,7 +10,7 @@ module Maze_config = struct
 end
 
 type t =
-  { players : Protocol.Player.t Protocol.Player_id.Map.t
+  { players : Player.t Player_id.Map.t
   ; max_players : int
   ; walls : Position.t list
   }
@@ -50,7 +50,7 @@ let create ?(maze_config = Maze_config.No_maze) () =
     | Generated_dungeon (config, seed) ->
       Dungeon_generation.generate ~config ~seed |> Set.to_list
   in
-  { players = Protocol.Player_id.Map.empty; max_players = default_max_players; walls }
+  { players = Player_id.Map.empty; max_players = default_max_players; walls }
 ;;
 
 let player_sigils = [| '@'; '#'; '$'; '%'; '&'; '*'; '+'; '='; '?'; '!' |]
@@ -96,20 +96,18 @@ let add_player t ~player_id ~player_name =
     | None -> Error "No available sigils"
     | Some sigil ->
       let position = find_spawn_position t in
-      let player =
-        Protocol.Player.{ id = player_id; position; name = player_name; sigil }
-      in
+      let player = Player.{ id = player_id; position; name = player_name; sigil } in
       let players = Map.set t.players ~key:player_id ~data:player in
       Ok ({ t with players }, player))
 ;;
 
 let remove_player t ~player_id = { t with players = Map.remove t.players player_id }
 
-let move_player t ~player_id ~(direction : Protocol.Direction.t) =
+let move_player t ~player_id ~(direction : Direction.t) =
   match Map.find t.players player_id with
   | None -> Error "Player not found"
   | Some player ->
-    let new_pos = Protocol.Direction.apply_to_position direction player.position in
+    let new_pos = Direction.apply_to_position direction player.position in
     (* Check for collisions with walls *)
     let wall_collision = List.exists t.walls ~f:(Position.equal new_pos) in
     if wall_collision
@@ -118,7 +116,7 @@ let move_player t ~player_id ~(direction : Protocol.Direction.t) =
       (* Check for collisions with other players *)
       let player_collision =
         Map.exists t.players ~f:(fun other_player ->
-          (not (Protocol.Player_id.equal other_player.id player_id))
+          (not (Player_id.equal other_player.id player_id))
           && Position.equal other_player.position new_pos)
       in
       if player_collision
@@ -135,7 +133,7 @@ let get_player t ~player_id = Map.find t.players player_id
 let get_walls t = t.walls
 
 (* Key mapping for client controls *)
-let key_to_action : Protocol.Key_input.t -> Protocol.Direction.t option = function
+let key_to_action : Key_input.t -> Direction.t option = function
   | ASCII 'w' | ASCII 'W' -> Some Up
   | ASCII 'a' | ASCII 'A' -> Some Left
   | ASCII 's' | ASCII 'S' -> Some Down

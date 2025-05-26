@@ -7,10 +7,11 @@ let default_port = 8080
 
 type game_client =
   { connection : Rpc.Connection.t
-  ; mutable your_id : Protocol.Player_id.t
-  ; mutable all_players : Protocol.Player.t list
+  ; mutable your_id : Player_id.t
+  ; mutable all_players : Player.t list
   ; mutable walls : Position.t list
   ; term : Notty_async.Term.t
+  ; log : Async_log_kernel.Log.t
   }
 
 let send_request client request =
@@ -39,10 +40,10 @@ let handle_input client =
     match result with
     | Ok (Ok ()) -> return `Continue
     | Ok (Error msg) ->
-      Stdio.eprintf "Movement failed: %s\n" msg;
+      [%log.error client.log "Movement failed" (msg : string)];
       return `Continue
     | Error err ->
-      Stdio.eprintf "RPC error: %s\n" (Error.to_string_hum err);
+      [%log.error client.log "RPC error" ~error:(Error.to_string_hum err)];
       return `Continue
   in
   let handle_key_event (key, mods) =
@@ -52,7 +53,7 @@ let handle_input client =
       return `Quit
     | key, [] ->
       (* Movement and other keys without modifiers *)
-      (match Protocol.Key_input.of_notty_key key with
+      (match Key_input.of_notty_key key with
        | Some key_input ->
          (match Game_state.key_to_action key_input with
           | Some direction -> handle_movement_key direction
@@ -96,14 +97,14 @@ let handle_state_updates client =
     | `Ok (Player_moved { player_id; new_position }) ->
       client.all_players
       <- List.map client.all_players ~f:(fun player ->
-           if Protocol.Player_id.equal player.id player_id
+           if Player_id.equal player.id player_id
            then { player with position = new_position }
            else player);
       loop ()
     | `Ok (Player_left player_id) ->
       client.all_players
       <- List.filter client.all_players ~f:(fun player ->
-           not (Protocol.Player_id.equal player.id player_id));
+           not (Player_id.equal player.id player_id));
       loop ()
   in
   loop ()
@@ -131,7 +132,7 @@ let render_loop client =
   loop ()
 ;;
 
-let connect_to_server ~host ~port ~player_name =
+let connect_to_server ~log ~host ~port ~player_name =
   let%bind socket_result =
     Monitor.try_with (fun () ->
       Tcp.connect (Tcp.Where_to_connect.of_host_and_port { host; port }))
@@ -140,8 +141,8 @@ let connect_to_server ~host ~port ~player_name =
     match socket_result with
     | Ok result -> result
     | Error exn ->
-      printf "Failed to connect to server at %s:%d\n" host port;
-      printf "Make sure the server is running: dune exec bin/game_server.exe\n";
+      [%log.error log "Failed to connect to server" (host : string) (port : int)];
+      [%log.info log "Make sure the server is running: dune exec bin/game_server.exe"];
       raise exn
   in
   let%bind connection_result =
@@ -172,6 +173,7 @@ let connect_to_server ~host ~port ~player_name =
       ; all_players = initial_state.all_players
       ; walls = initial_state.walls
       ; term
+      ; log
       }
     in
     return (client, pipe))
@@ -195,8 +197,8 @@ let cleanup_and_exit client =
   Shutdown.exit 0
 ;;
 
-let main_loop ~host ~port ~player_name =
-  let%bind client, _update_pipe = connect_to_server ~host ~port ~player_name in
+let main_loop ~log ~host ~port ~player_name =
+  let%bind client, _update_pipe = connect_to_server ~log ~host ~port ~player_name in
   let%bind () = Notty_async.Term.cursor client.term (Some (0, 0)) in
   (* Run render loop and state updates in the background *)
   don't_wait_for (render_loop client);
@@ -228,5 +230,9 @@ let command =
           (optional_with_default "Player" string)
           ~doc:"NAME Player name (default: Player)"
       in
-      fun () -> main_loop ~host ~port ~player_name]
+      fun () ->
+        let log =
+          Log.create ~level:`Info ~output:[ Log.Output.stderr () ] ~on_error:`Raise ()
+        in
+        main_loop ~log ~host ~port ~player_name]
 ;;

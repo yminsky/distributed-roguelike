@@ -24,7 +24,7 @@ end
 
 (** Direction for maze carving *)
 module Direction_helpers = struct
-  open Protocol.Direction
+  open Direction
 
   let all = [ Up; Down; Left; Right ]
 

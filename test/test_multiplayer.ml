@@ -5,10 +5,7 @@ let%expect_test "multi-player state management" =
   let state = Game_state.create () in
   (* Add first player *)
   let result1 =
-    Game_state.add_player
-      state
-      ~player_id:(Protocol.Player_id.create "alice")
-      ~player_name:"Alice"
+    Game_state.add_player state ~player_id:(Player_id.of_int 1) ~player_name:"Alice"
   in
   (match result1 with
    | Ok (_state, player) ->
@@ -26,10 +23,7 @@ let%expect_test "multi-player state management" =
   in
   (* Add second player *)
   let result2 =
-    Game_state.add_player
-      state
-      ~player_id:(Protocol.Player_id.create "bob")
-      ~player_name:"Bob"
+    Game_state.add_player state ~player_id:(Player_id.of_int 2) ~player_name:"Bob"
   in
   (match result2 with
    | Ok (_state, player) ->
@@ -52,20 +46,14 @@ let%expect_test "collision detection" =
   (* Add two players *)
   let state, alice =
     match
-      Game_state.add_player
-        state
-        ~player_id:(Protocol.Player_id.create "alice")
-        ~player_name:"Alice"
+      Game_state.add_player state ~player_id:(Player_id.of_int 1) ~player_name:"Alice"
     with
     | Ok result -> result
     | Error _ -> failwith "Failed to add Alice"
   in
   let state, bob =
     match
-      Game_state.add_player
-        state
-        ~player_id:(Protocol.Player_id.create "bob")
-        ~player_name:"Bob"
+      Game_state.add_player state ~player_id:(Player_id.of_int 2) ~player_name:"Bob"
     with
     | Ok result -> result
     | Error _ -> failwith "Failed to add Bob"
@@ -79,47 +67,34 @@ let%expect_test "collision detection" =
   (* Move Bob to be adjacent to Alice (right of Alice) *)
   let state =
     match
-      Game_state.move_player
-        state
-        ~player_id:(Protocol.Player_id.create "bob")
-        ~direction:Left
+      Game_state.move_player state ~player_id:(Player_id.of_int 2) ~direction:Left
     with
     | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move Bob left"
   in
   let bob =
-    Game_state.get_player state ~player_id:(Protocol.Player_id.create "bob")
-    |> Option.value_exn
+    Game_state.get_player state ~player_id:(Player_id.of_int 2) |> Option.value_exn
   in
   printf "Bob now at (%d, %d)\n" bob.position.x bob.position.y;
   (* Check Alice's current position *)
   let alice =
-    Game_state.get_player state ~player_id:(Protocol.Player_id.create "alice")
-    |> Option.value_exn
+    Game_state.get_player state ~player_id:(Player_id.of_int 1) |> Option.value_exn
   in
   printf "Alice is at (%d, %d)\n" alice.position.x alice.position.y;
   (* Try to move Bob into Alice's position (should fail) *)
   let result =
-    Game_state.move_player
-      state
-      ~player_id:(Protocol.Player_id.create "bob")
-      ~direction:Left
+    Game_state.move_player state ~player_id:(Player_id.of_int 2) ~direction:Left
   in
   (match result with
    | Ok (_state, _update) -> printf "Move succeeded (unexpected)\n"
    | Error msg -> printf "Move blocked: %s\n" msg);
   (* Move Bob in a different direction (should work) *)
   let result =
-    Game_state.move_player
-      state
-      ~player_id:(Protocol.Player_id.create "bob")
-      ~direction:Down
+    Game_state.move_player state ~player_id:(Player_id.of_int 2) ~direction:Down
   in
   (match result with
    | Ok (new_state, _update) ->
-     let bob =
-       Game_state.get_player new_state ~player_id:(Protocol.Player_id.create "bob")
-     in
+     let bob = Game_state.get_player new_state ~player_id:(Player_id.of_int 2) in
      (match bob with
       | Some player ->
         printf "Bob moved to (%d, %d)\n" player.position.x player.position.y
@@ -140,30 +115,21 @@ let%expect_test "visual multi-player rendering" =
   (* Add three players *)
   let state, _ =
     match
-      Game_state.add_player
-        state
-        ~player_id:(Protocol.Player_id.create "alice")
-        ~player_name:"Alice"
+      Game_state.add_player state ~player_id:(Player_id.of_int 1) ~player_name:"Alice"
     with
     | Ok result -> result
     | Error _ -> failwith "Failed to add Alice"
   in
   let state, _ =
     match
-      Game_state.add_player
-        state
-        ~player_id:(Protocol.Player_id.create "bob")
-        ~player_name:"Bob"
+      Game_state.add_player state ~player_id:(Player_id.of_int 2) ~player_name:"Bob"
     with
     | Ok result -> result
     | Error _ -> failwith "Failed to add Bob"
   in
   let state, _ =
     match
-      Game_state.add_player
-        state
-        ~player_id:(Protocol.Player_id.create "charlie")
-        ~player_name:"Charlie"
+      Game_state.add_player state ~player_id:(Player_id.of_int 3) ~player_name:"Charlie"
     with
     | Ok result -> result
     | Error _ -> failwith "Failed to add Charlie"
@@ -171,30 +137,21 @@ let%expect_test "visual multi-player rendering" =
   (* Move players to specific positions *)
   let state =
     match
-      Game_state.move_player
-        state
-        ~player_id:(Protocol.Player_id.create "bob")
-        ~direction:Right
+      Game_state.move_player state ~player_id:(Player_id.of_int 2) ~direction:Right
     with
     | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move Bob right"
   in
   let state =
     match
-      Game_state.move_player
-        state
-        ~player_id:(Protocol.Player_id.create "bob")
-        ~direction:Right
+      Game_state.move_player state ~player_id:(Player_id.of_int 2) ~direction:Right
     with
     | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move Bob right again"
   in
   let state =
     match
-      Game_state.move_player
-        state
-        ~player_id:(Protocol.Player_id.create "charlie")
-        ~direction:Down
+      Game_state.move_player state ~player_id:(Player_id.of_int 3) ~direction:Down
     with
     | Ok (s, _update) -> s
     | Error _ -> failwith "Failed to move Charlie down"
@@ -202,7 +159,7 @@ let%expect_test "visual multi-player rendering" =
   (* Render the world from Alice's perspective *)
   let players = Game_state.get_players state in
   let walls = Game_state.get_walls state in
-  let alice_id = Protocol.Player_id.create "alice" in
+  let alice_id = Player_id.of_int 1 in
   let world_view =
     Display.build_world_view
       ~players

@@ -12,13 +12,13 @@ module Connection_state : sig
   type t
 
   val create : unit -> t
-  val player_id : t -> Protocol.Player_id.t option
+  val player_id : t -> Player_id.t option
 end
 
 module Server_state : sig
   type t
 
-  val create : unit -> t
+  val create : Async_log_kernel.Log.t -> t
 end
 
 val handle_request

@@ -1,11 +1,12 @@
 open! Core
 open! Import
 open Async_kernel
+open Async_log_kernel.Ppx_log_syntax
 module Rpc = Async_rpc_kernel.Rpc
 
 module Connection_state = struct
   type t =
-    { mutable player_id : Protocol.Player_id.t option
+    { mutable player_id : Player_id.t option
     ; mutable connection : Rpc.Connection.t option
     }
 
@@ -19,9 +20,10 @@ module Server_state = struct
     ; mutable next_player_id : int
         (* Counter for generating unique player IDs (e.g., player_1, player_2, etc.) *)
     ; update_writers : Protocol.Update.t Pipe.Writer.t list ref
+    ; log : Async_log_kernel.Log.t
     }
 
-  let create () =
+  let create log =
     let maze_config =
       Game_state.Maze_config.Generated_dungeon
         (Dungeon_generation.Config.default, Random.int 1000000)
@@ -29,6 +31,7 @@ module Server_state = struct
     { game_state = Game_state.create ~maze_config ()
     ; next_player_id = 1
     ; update_writers = ref []
+    ; log
     }
   ;;
 
@@ -45,9 +48,7 @@ module Server_state = struct
   ;;
 
   let add_player t ~player_name =
-    let player_id =
-      Protocol.Player_id.create (Printf.sprintf "player_%d" t.next_player_id)
-    in
+    let player_id = Player_id.of_int t.next_player_id in
     t.next_player_id <- t.next_player_id + 1;
     match Game_state.add_player t.game_state ~player_id ~player_name with
     | Ok (new_game_state, player) ->
@@ -82,17 +83,14 @@ let handle_request server_state connection_state request =
     (match Server_state.add_player server_state ~player_name with
      | Ok player ->
        connection_state.Connection_state.player_id <- Some player.id;
-       (* TODO: Consider using a proper logging library instead of printf.
-
-          ym: Yeah, you should use ppx_log, in fact.
-       *)
-       printf
-         "Player %s (%s) joined\n%!"
-         player.name
-         (Protocol.Player_id.to_string player.id);
+       [%log.info
+         server_state.log
+           "Player joined"
+           ~player_name:player.name
+           ~player_id:(Player_id.to_string player.id)];
        return (Ok ())
      | Error msg ->
-       printf "Join failed: %s\n%!" msg;
+       [%log.error server_state.log "Join failed" ~reason:msg];
        return (Error msg))
   | Move { direction } ->
     (match connection_state.Connection_state.player_id with
@@ -100,13 +98,14 @@ let handle_request server_state connection_state request =
      | Some player_id ->
        (match Server_state.move_player server_state ~player_id ~direction with
         | Ok () ->
-          printf
-            "Player %s moved %s\n%!"
-            (Protocol.Player_id.to_string player_id)
-            (Protocol.Direction.to_string direction);
+          [%log.info
+            server_state.log
+              "Player moved"
+              ~player_id:(Player_id.to_string player_id)
+              ~direction:(Direction.to_string direction)];
           return (Ok ())
         | Error msg ->
-          printf "Move failed: %s\n%!" msg;
+          [%log.error server_state.log "Move failed" ~reason:msg];
           return (Error msg)))
   | Leave ->
     (match connection_state.Connection_state.player_id with
@@ -114,7 +113,8 @@ let handle_request server_state connection_state request =
      | Some player_id ->
        let _ = Server_state.remove_player server_state ~player_id in
        connection_state.Connection_state.player_id <- None;
-       printf "Player %s left\n%!" (Protocol.Player_id.to_string player_id);
+       [%log.info
+         server_state.log "Player left" ~player_id:(Player_id.to_string player_id)];
        return (Ok ()))
 ;;
 
@@ -122,7 +122,10 @@ let handle_state_rpc server_state connection_state connection =
   let your_id =
     match connection_state.Connection_state.player_id with
     | Some id -> id
-    | None -> Protocol.Player_id.create "" (* Not joined yet *)
+    | None ->
+      (* TODO: This is broken - we shouldn't create a fake player ID here.
+         The protocol should be changed so that your_id is optional in Initial_state. *)
+      Player_id.of_int 0
   in
   let initial_state =
     Protocol.Initial_state.
@@ -167,12 +170,12 @@ let serve_with_transport server_state (transport : Rpc.Transport.t) =
            ~on_exception:Rpc.On_exception.Close_connection)
       ~connection_state:(fun rpc_conn ->
         connection_state.connection <- Some rpc_conn;
-        printf "RPC connection established\n%!";
+        [%log.info server_state.log "RPC connection established"];
         connection_state)
   in
   match conn_result with
   | Error exn ->
-    printf "RPC connection failed: %s\n%!" (Exn.to_string exn);
+    [%log.error server_state.log "RPC connection failed" ~error:(Exn.to_string exn)];
     return ()
   | Ok rpc_conn ->
     (* Wait for connection to close *)
@@ -181,6 +184,7 @@ let serve_with_transport server_state (transport : Rpc.Transport.t) =
      | None -> ()
      | Some player_id ->
        ignore (Server_state.remove_player server_state ~player_id : bool);
-       printf "Player %s disconnected\n%!" (Protocol.Player_id.to_string player_id));
+       [%log.info
+         server_state.log "Player disconnected" ~player_id:(Player_id.to_string player_id)]);
     return ()
 ;;

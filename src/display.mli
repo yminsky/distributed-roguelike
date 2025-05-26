@@ -6,7 +6,7 @@ open! Import
 module World_view : sig
   (** Configuration for what portion of the game world to render. *)
   type t =
-    { players : Protocol.Player.t list
+    { players : Player.t list
     ; walls : Position.t list
     ; center_pos : Position.t (** Position to center the view on *)
     ; view_width : int
@@ -31,9 +31,9 @@ val render_ui : World_view.t -> Notty.image
     @param view_height Height of the viewing area
     @return World_view configured for the viewing player *)
 val build_world_view
-  :  players:Protocol.Player.t list
+  :  players:Player.t list
   -> walls:Position.t list
-  -> viewing_player_id:Protocol.Player_id.t
+  -> viewing_player_id:Player_id.t
   -> view_width:int
   -> view_height:int
   -> World_view.t
