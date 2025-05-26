@@ -184,6 +184,9 @@ let%expect_test "visual rendering with walls" =
                             ...
                             ...
 
+    Messages:
+    [No messages]
+
     Center: (0, 0) | Players: 1 | Use WASD to move, Q to quit
     |}]
 ;;
@@ -268,6 +271,9 @@ let%expect_test "debug visibility symmetry" =
                ...
                ...
 
+    Messages:
+    [No messages]
+
     Center: (0, 0) | Players: 1 | Use WASD to move, Q to quit
 
     Checking key positions:
@@ -339,6 +345,9 @@ let%expect_test "visibility blocked by walls" =
     ..............
     ..............
 
+    Messages:
+    [No messages]
+
     Center: (-4, 0) | Players: 1 | Use WASD to move, Q to quit
     |}]
 ;;
@@ -401,6 +410,9 @@ let%expect_test "visual state transitions" =
           .................................................
           .................................................
 
+    Messages:
+    [No messages]
+
     Center: (0, 0) | Players: 1 | Use WASD to move, Q to quit
 
     === After moving right twice ===
@@ -416,6 +428,9 @@ let%expect_test "visual state transitions" =
           .................................................
           .................................................
 
+    Messages:
+    [No messages]
+
     Center: (2, 0) | Players: 1 | Use WASD to move, Q to quit
 
     === After moving down once ===
@@ -430,6 +445,9 @@ let%expect_test "visual state transitions" =
           .................................................
           .................................................
           .................................................
+
+    Messages:
+    [No messages]
 
     Center: (2, 1) | Players: 1 | Use WASD to move, Q to quit
     |}]

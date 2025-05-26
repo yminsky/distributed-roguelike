@@ -10,12 +10,18 @@ type game_client =
   ; mutable your_id : Player_id.t
   ; mutable all_players : Player.t list
   ; mutable walls : Position.t list
+  ; mutable messages : string list
   ; term : Notty_async.Term.t
   ; log : Async_log_kernel.Log.t
   }
 
 let send_request client request =
   Rpc.Rpc.dispatch Protocol.Rpc_calls.send_request client.connection request
+;;
+
+let add_message client message =
+  (* Keep only the last 20 messages *)
+  client.messages <- (message :: client.messages |> fun msgs -> List.take msgs 20)
 ;;
 
 (* TODO: can you inline this? Also, instead of failwith, use [%message] *)
@@ -38,9 +44,21 @@ let handle_input client =
   let handle_movement_key direction =
     let%bind result = send_request client (Move { direction }) in
     match result with
-    | Ok (Ok ()) -> return `Continue
+    | Ok (Ok ()) ->
+      (* Add a movement message after successful move *)
+      (match
+         List.find client.all_players ~f:(fun p -> Player_id.equal p.id client.your_id)
+       with
+       | Some player ->
+         let new_pos = Direction.apply_to_position direction player.position in
+         add_message
+           client
+           (sprintf "Walking. You're now at (%d, %d)" new_pos.x new_pos.y)
+       | None -> ());
+      return `Continue
     | Ok (Error msg) ->
       [%log.error client.log "Movement failed" (msg : string)];
+      add_message client (sprintf "Cannot move: %s" msg);
       return `Continue
     | Error err ->
       [%log.error client.log "RPC error" ~error:(Error.to_string_hum err)];
@@ -114,7 +132,8 @@ let render_loop client =
   let rec loop () =
     let width, height = Notty_async.Term.size client.term in
     (* Reserve 2 lines for status display at bottom *)
-    let view_height = max 5 (height - 2) in
+    let view_height = max 5 (height - 8) in
+    (* Reserve space for messages and status *)
     let view_width = max 10 width in
     let world_view =
       Display.build_world_view
@@ -123,6 +142,7 @@ let render_loop client =
         ~viewing_player_id:client.your_id
         ~view_width
         ~view_height
+        ~messages:client.messages
     in
     let ui = Display.render_ui world_view in
     let%bind () = Notty_async.Term.image client.term ui in
@@ -172,6 +192,7 @@ let connect_to_server ~log ~host ~port ~player_name =
       ; your_id = initial_state.your_id
       ; all_players = initial_state.all_players
       ; walls = initial_state.walls
+      ; messages = [ "Welcome to the game!" ]
       ; term
       ; log
       }

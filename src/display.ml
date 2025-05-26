@@ -9,6 +9,7 @@ module World_view = struct
     ; view_width : int
     ; view_height : int
     ; visible_positions : Position.Set.t
+    ; messages : string list
     }
 end
 
@@ -20,6 +21,7 @@ let render_grid (world_view : World_view.t) =
       ; players
       ; walls
       ; visible_positions
+      ; messages = _
       }
     =
     world_view
@@ -69,8 +71,19 @@ let render_grid (world_view : World_view.t) =
 let render_ui (world_view : World_view.t) =
   let open Notty in
   let grid = render_grid world_view in
-  let { World_view.center_pos = { x; y }; players; _ } = world_view in
+  let { World_view.center_pos = { x; y }; players; messages; _ } = world_view in
   let player_count = List.length players in
+  (* Render message panel - show last 5 messages *)
+  let message_panel =
+    let recent_messages = List.take messages 5 in
+    let message_lines =
+      if List.is_empty recent_messages
+      then [ I.(string A.(fg (gray 8)) "[No messages]") ]
+      else List.map recent_messages ~f:(fun msg -> I.(string A.(fg white) msg))
+    in
+    let header = I.(string A.(fg cyan ++ st bold) "Messages:") in
+    I.(header :: message_lines |> vcat)
+  in
   let status =
     I.(
       string
@@ -81,12 +94,14 @@ let render_ui (world_view : World_view.t) =
            y
            player_count))
   in
-  I.(grid <-> I.(string A.empty "") <-> status)
+  I.(
+    grid <-> I.(string A.empty "") <-> message_panel <-> I.(string A.empty "") <-> status)
 ;;
 
 let default_visibility_radius = 25
 
-let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height =
+let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height ~messages
+  =
   let viewing_player =
     List.find players ~f:(fun player ->
       Player_id.equal player.Player.id viewing_player_id)
@@ -105,5 +120,6 @@ let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height
         ~walls:(Position.Set.of_list walls)
         ~max_radius:default_visibility_radius
   in
-  World_view.{ players; walls; center_pos; view_width; view_height; visible_positions }
+  World_view.
+    { players; walls; center_pos; view_width; view_height; visible_positions; messages }
 ;;

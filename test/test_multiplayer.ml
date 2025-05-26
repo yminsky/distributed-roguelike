@@ -167,6 +167,7 @@ let%expect_test "visual multi-player rendering" =
       ~viewing_player_id:alice_id
       ~view_width:15
       ~view_height:9
+      ~messages:[]
   in
   let image = Display.render_ui world_view in
   print_endline (Notty_test_utils.render_to_string image);
@@ -182,6 +183,120 @@ let%expect_test "visual multi-player rendering" =
     ...............
     ...............
 
+    Messages:
+    [No messages]
+
     Center: (0, 0) | Players: 3 | Use WASD to move, Q to quit
+    |}]
+;;
+
+let%expect_test "message panel display" =
+  let state = Game_state.create () in
+  let state, _ =
+    match
+      Game_state.add_player state ~player_id:(Player_id.of_int 1) ~player_name:"Player"
+    with
+    | Ok result -> result
+    | Error _ -> failwith "Failed to add player"
+  in
+  let players = Game_state.get_players state in
+  let walls = Game_state.get_walls state in
+  let messages =
+    [ "You feel a strange presence..."
+    ; "Something stirs in the darkness."
+    ; "You stepped on a creaky floorboard!"
+    ; "Walking. You're now at (5, 3)"
+    ; "Welcome to the dungeon!"
+    ]
+  in
+  let world_view =
+    Display.build_world_view
+      ~players
+      ~walls
+      ~viewing_player_id:(Player_id.of_int 1)
+      ~view_width:30
+      ~view_height:10
+      ~messages
+  in
+  let image = Display.render_ui world_view in
+  print_endline (Notty_test_utils.render_to_string image);
+  [%expect
+    {|
+    ..............................
+    ..............................
+    ..............................
+    ..............................
+    ..............................
+    ...............@..............
+    ..............................
+    ..............................
+    ..............................
+    ..............................
+
+    Messages:
+    You feel a strange presence...
+    Something stirs in the darkness.
+    You stepped on a creaky floorboard!
+    Walking. You're now at (5, 3)
+    Welcome to the dungeon!
+
+    Center: (0, 0) | Players: 1 | Use WASD to move, Q to quit
+    |}]
+;;
+
+let%expect_test "message panel shows only recent messages" =
+  let state = Game_state.create () in
+  let state, _ =
+    match
+      Game_state.add_player state ~player_id:(Player_id.of_int 1) ~player_name:"Player"
+    with
+    | Ok result -> result
+    | Error _ -> failwith "Failed to add player"
+  in
+  let players = Game_state.get_players state in
+  let walls = Game_state.get_walls state in
+  (* Create more than 5 messages - only the first 5 should show *)
+  let messages =
+    [ "Message 7 (most recent)"
+    ; "Message 6"
+    ; "Message 5"
+    ; "Message 4"
+    ; "Message 3"
+    ; "Message 2"
+    ; "Message 1 (oldest)"
+    ]
+  in
+  let world_view =
+    Display.build_world_view
+      ~players
+      ~walls
+      ~viewing_player_id:(Player_id.of_int 1)
+      ~view_width:30
+      ~view_height:10
+      ~messages
+  in
+  let image = Display.render_ui world_view in
+  print_endline (Notty_test_utils.render_to_string image);
+  [%expect
+    {|
+    ..............................
+    ..............................
+    ..............................
+    ..............................
+    ..............................
+    ...............@..............
+    ..............................
+    ..............................
+    ..............................
+    ..............................
+
+    Messages:
+    Message 7 (most recent)
+    Message 6
+    Message 5
+    Message 4
+    Message 3
+
+    Center: (0, 0) | Players: 1 | Use WASD to move, Q to quit
     |}]
 ;;

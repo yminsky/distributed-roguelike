@@ -14,6 +14,7 @@ let render_state_to_string ?(width = 21) ?(height = 11) state ~player_id =
       ~viewing_player_id:player_id
       ~view_width:width
       ~view_height:height
+      ~messages:[]
   in
   let image = Lan_rogue.Display.render_ui world_view in
   render_to_string image

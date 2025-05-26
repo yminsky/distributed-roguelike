@@ -13,6 +13,7 @@ module World_view : sig
     ; view_height : int
     ; visible_positions : Position.Set.t
     (** Positions currently visible to the viewing player *)
+    ; messages : string list (** Recent messages to display *)
     }
 end
 
@@ -36,4 +37,5 @@ val build_world_view
   -> viewing_player_id:Player_id.t
   -> view_width:int
   -> view_height:int
+  -> messages:string list
   -> World_view.t
