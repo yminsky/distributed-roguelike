@@ -3,6 +3,9 @@
 open! Core
 open! Import
 
+(* TODO: This module currently depends on Protocol.Position when it should 
+   probably just use Position directly to reduce coupling. *)
+
 (** Configuration for maze generation using recursive backtracker algorithm.
 
     The recursive backtracker creates perfect mazes (no loops) with long, winding

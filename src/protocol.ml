@@ -112,6 +112,8 @@ module Rpc_calls = struct
   ;;
 
   let get_game_state =
+    (* TODO: Consider whether wrapping in a function is necessary here, 
+       or if we could just expose the RPC directly *)
     let rpc =
       Rpc.State_rpc.create
         ~name:"game_state"

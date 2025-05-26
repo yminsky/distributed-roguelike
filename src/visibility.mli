@@ -3,8 +3,14 @@
     This module implements recursive shadow-casting algorithm to determine which tiles are
     visible from a given position, taking walls into account. *)
 
+(* TODO: The implementation actually uses ray-casting with Bresenham's algorithm,
+   not shadow-casting. Either update the docs or implement proper shadow-casting. *)
+
 open! Core
 open! Import
+
+(* TODO: This module uses Protocol.Position.t instead of just Position.t,
+   creating unnecessary coupling to the Protocol module. *)
 
 (** Compute visible tiles from a given position using shadow-casting.
 

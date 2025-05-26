@@ -67,6 +67,7 @@ module Room = struct
 
   (** Get all floor positions in a room *)
   let floor_positions room =
+    (* TODO: Consider using List comprehension or List.init for a more functional approach *)
     let positions = ref [] in
     for x = room.x to room.x + room.width - 1 do
       for y = room.y to room.y + room.height - 1 do
@@ -79,6 +80,7 @@ end
 
 (** Create an L-shaped corridor between two positions *)
 let create_corridor ~from ~(to_ : position) =
+  (* TODO: This function is quite imperative - consider a more functional approach *)
   let positions = ref [] in
   let x1, y1 = from.x, from.y in
   let x2, y2 = to_.x, to_.y in

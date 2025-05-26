@@ -11,6 +11,7 @@ end
 
 type t =
   { players : (Protocol.Player_id.t, Protocol.Player.t) List.Assoc.t
+    (* TODO: Consider using Map instead of List.Assoc for better performance with many players *)
   ; max_players : int
   ; walls : Position.t list
   }
@@ -21,6 +22,7 @@ let max_spawn_search_radius = 20
 let create_test_maze_walls () =
   (* Create a simple test maze with a central room and corridors
      The spawn point at (0,0) is guaranteed to be in the central room *)
+  (* TODO: Consider a more functional approach to building the walls list *)
   let walls = ref [] in
   (* Create a square box from (-3,-3) to (3,3) *)
   for x = -3 to 3 do

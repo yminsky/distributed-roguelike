@@ -1,4 +1,7 @@
-(** Core server implementation that works with any RPC transport. *)
+(** Core server implementation that works with any RPC transport. 
+    
+    This module only depends on Async_kernel, not full Async, making it
+    transport-agnostic. *)
 
 open! Core
 open! Import
