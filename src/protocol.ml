@@ -26,6 +26,7 @@ module Initial_state = struct
     { your_id : Player_id.t
     ; all_players : Player.t list
     ; walls : Position.t list
+    ; npcs : Npc.t list
     }
   [@@deriving sexp, bin_io]
 end

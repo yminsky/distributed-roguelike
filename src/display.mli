@@ -8,6 +8,7 @@ module World_view : sig
   type t =
     { players : Player.t list
     ; walls : Position.t list
+    ; npcs : Npc.t list
     ; center_pos : Position.t (** Position to center the view on *)
     ; view_width : int
     ; view_height : int
@@ -27,6 +28,7 @@ val render_ui : World_view.t -> Notty.image
 
     @param players All players in the game
     @param walls All wall positions
+    @param npcs All NPCs in the game
     @param viewing_player_id The player whose perspective we're viewing from
     @param view_width Width of the viewing area
     @param view_height Height of the viewing area
@@ -34,6 +36,7 @@ val render_ui : World_view.t -> Notty.image
 val build_world_view
   :  players:Player.t list
   -> walls:Position.t list
+  -> npcs:Npc.t list
   -> viewing_player_id:Player_id.t
   -> view_width:int
   -> view_height:int

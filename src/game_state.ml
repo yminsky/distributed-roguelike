@@ -11,6 +11,7 @@ end
 
 type t =
   { players : Player.t Player_id.Map.t
+  ; npcs : Npc.t String.Map.t
   ; max_players : int
   ; walls : Position.t list
   }
@@ -50,7 +51,12 @@ let create ?(maze_config = Maze_config.No_maze) () =
     | Generated_dungeon (config, seed) ->
       Dungeon_generation.generate ~config ~seed |> Set.to_list
   in
-  { players = Player_id.Map.empty; max_players = default_max_players; walls }
+  let npcs =
+    (* Create a test NPC for now *)
+    let test_npc = Npc.create ~id:"goblin1" ~position:{ x = 5; y = 5 } ~name:"Goblin" ~sigil:'g' ~hit_points:3 in
+    String.Map.of_alist_exn [ test_npc.id, test_npc ]
+  in
+  { players = Player_id.Map.empty; npcs; max_players = default_max_players; walls }
 ;;
 
 let player_sigils = [| '@'; '#'; '$'; '%'; '&'; '*'; '+'; '='; '?'; '!' |]
@@ -64,6 +70,7 @@ let next_available_sigil t =
 
 let find_spawn_position t =
   let occupied_positions = Map.data t.players |> List.map ~f:(fun p -> p.position) in
+  let npc_positions = Map.data t.npcs |> List.map ~f:(fun npc -> npc.position) in
   let wall_positions = t.walls in
   (* Generate positions in a spiral around origin *)
   let positions_at_radius radius =
@@ -80,6 +87,7 @@ let find_spawn_position t =
       match
         List.find (positions_at_radius radius) ~f:(fun pos ->
           (not (List.exists occupied_positions ~f:(Position.equal pos)))
+          && not (List.exists npc_positions ~f:(Position.equal pos))
           && not (List.exists wall_positions ~f:(Position.equal pos)))
       with
       | Some pos -> pos
@@ -122,15 +130,23 @@ let move_player t ~player_id ~(direction : Direction.t) =
       if player_collision
       then Error "Cannot move into another player"
       else (
-        let updated_player = { player with position = new_pos } in
-        let players = Map.set t.players ~key:player_id ~data:updated_player in
-        let update = Protocol.Update.Player_moved { player_id; new_position = new_pos } in
-        Ok ({ t with players }, update)))
+        (* Check for collisions with NPCs *)
+        match Map.data t.npcs |> List.find ~f:(fun npc ->
+          Position.equal npc.position new_pos) with
+        | Some npc ->
+          (* Hit the NPC *)
+          Error (sprintf "You bump into the %s!" npc.name)
+        | None ->
+          let updated_player = { player with position = new_pos } in
+          let players = Map.set t.players ~key:player_id ~data:updated_player in
+          let update = Protocol.Update.Player_moved { player_id; new_position = new_pos } in
+          Ok ({ t with players }, update)))
 ;;
 
 let get_players t = Map.data t.players
 let get_player t ~player_id = Map.find t.players player_id
 let get_walls t = t.walls
+let get_npcs t = Map.data t.npcs
 
 (* Key mapping for client controls *)
 let key_to_action : Key_input.t -> Direction.t option = function

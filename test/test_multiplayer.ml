@@ -159,11 +159,13 @@ let%expect_test "visual multi-player rendering" =
   (* Render the world from Alice's perspective *)
   let players = Game_state.get_players state in
   let walls = Game_state.get_walls state in
+  let npcs = Game_state.get_npcs state in
   let alice_id = Player_id.of_int 1 in
   let world_view =
     Display.build_world_view
       ~players
       ~walls
+      ~npcs
       ~viewing_player_id:alice_id
       ~view_width:15
       ~view_height:9
@@ -183,8 +185,9 @@ let%expect_test "visual multi-player rendering" =
     ...............
     ...............
 
-    Messages:
-    [No messages]
+    ┌─────────────┐
+    │ [No messages] │
+    └─────────────┘
 
     Center: (0, 0) | Players: 3 | Use WASD to move, Q to quit
     |}]
@@ -213,6 +216,7 @@ let%expect_test "message panel display" =
     Display.build_world_view
       ~players
       ~walls
+      ~npcs:[]
       ~viewing_player_id:(Player_id.of_int 1)
       ~view_width:30
       ~view_height:10
@@ -233,12 +237,13 @@ let%expect_test "message panel display" =
     ..............................
     ..............................
 
-    Messages:
-    You feel a strange presence...
-    Something stirs in the darkness.
-    You stepped on a creaky floorboard!
-    Walking. You're now at (5, 3)
-    Welcome to the dungeon!
+    ┌────────────────────────────┐
+    │ You feel a strange presence... │
+    │ Something stirs in the darkness. │
+    │ You stepped on a creaky floorboard! │
+    │ Walking. You're now at (5, 3) │
+    │ Welcome to the dungeon!    │
+    └────────────────────────────┘
 
     Center: (0, 0) | Players: 1 | Use WASD to move, Q to quit
     |}]
@@ -270,6 +275,7 @@ let%expect_test "message panel shows only recent messages" =
     Display.build_world_view
       ~players
       ~walls
+      ~npcs:[]
       ~viewing_player_id:(Player_id.of_int 1)
       ~view_width:30
       ~view_height:10
@@ -290,12 +296,13 @@ let%expect_test "message panel shows only recent messages" =
     ..............................
     ..............................
 
-    Messages:
-    Message 7 (most recent)
-    Message 6
-    Message 5
-    Message 4
-    Message 3
+    ┌────────────────────────────┐
+    │ Message 7 (most recent)    │
+    │ Message 6                  │
+    │ Message 5                  │
+    │ Message 4                  │
+    │ Message 3                  │
+    └────────────────────────────┘
 
     Center: (0, 0) | Players: 1 | Use WASD to move, Q to quit
     |}]

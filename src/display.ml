@@ -5,6 +5,7 @@ module World_view = struct
   type t =
     { players : Player.t list
     ; walls : Position.t list
+    ; npcs : Npc.t list
     ; center_pos : Position.t
     ; view_width : int
     ; view_height : int
@@ -20,6 +21,7 @@ let render_grid (world_view : World_view.t) =
       ; view_height
       ; players
       ; walls
+      ; npcs
       ; visible_positions
       ; messages = _
       }
@@ -31,6 +33,10 @@ let render_grid (world_view : World_view.t) =
   (* Create position -> player lookup *)
   let player_map =
     List.fold players ~init:[] ~f:(fun acc player -> (player.position, player) :: acc)
+  in
+  (* Create position -> npc lookup *)
+  let npc_map =
+    List.fold npcs ~init:[] ~f:(fun acc npc -> (npc.position, npc) :: acc)
   in
   (* Create a set of wall positions for efficient lookup *)
   let wall_set = Set.of_list (module Position) walls in
@@ -47,9 +53,12 @@ let render_grid (world_view : World_view.t) =
         match List.Assoc.find player_map world_pos ~equal:Position.equal with
         | Some player -> player.sigil, A.(fg lightgreen)
         | None ->
-          if Set.mem wall_set world_pos
-          then '#', A.(fg white) (* Wall character *)
-          else render_empty_cell world_x world_y
+          (match List.Assoc.find npc_map world_pos ~equal:Position.equal with
+           | Some npc -> npc.sigil, A.(fg lightred)
+           | None ->
+             if Set.mem wall_set world_pos
+             then '#', A.(fg white) (* Wall character *)
+             else render_empty_cell world_x world_y)
       in
       I.(string color (String.of_char ch)))
   in
@@ -73,7 +82,7 @@ let render_ui (world_view : World_view.t) =
   let grid = render_grid world_view in
   let { World_view.center_pos = { x; y }; players; messages; _ } = world_view in
   let player_count = List.length players in
-  (* Render message panel - show last 5 messages *)
+  (* Render message panel with box - show last 5 messages *)
   let message_panel =
     let recent_messages = List.take messages 5 in
     let message_lines =
@@ -81,8 +90,26 @@ let render_ui (world_view : World_view.t) =
       then [ I.(string A.(fg (gray 8)) "[No messages]") ]
       else List.map recent_messages ~f:(fun msg -> I.(string A.(fg white) msg))
     in
-    let header = I.(string A.(fg cyan ++ st bold) "Messages:") in
-    I.(header :: message_lines |> vcat)
+    (* Box drawing characters *)
+    let box_width = world_view.view_width in
+    let box_attr = A.(fg cyan) in
+    let h_line = "─" in
+    let horizontal_line =
+      String.concat ~sep:"" (List.init (box_width - 2) ~f:(fun _ -> h_line))
+    in
+    let top_border = I.(string box_attr ("┌" ^ horizontal_line ^ "┐")) in
+    let bottom_border = I.(string box_attr ("└" ^ horizontal_line ^ "┘")) in
+    let make_content_line content =
+      let content_width = I.width content in
+      let padding = max 0 (box_width - 4 - content_width) in
+      I.(
+        string box_attr "│ "
+        <|> content
+        <|> string A.empty (String.make padding ' ')
+        <|> string box_attr " │")
+    in
+    let boxed_lines = List.map message_lines ~f:make_content_line in
+    I.((top_border :: boxed_lines) @ [ bottom_border ] |> vcat)
   in
   let status =
     I.(
@@ -100,7 +127,7 @@ let render_ui (world_view : World_view.t) =
 
 let default_visibility_radius = 25
 
-let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height ~messages
+let build_world_view ~players ~walls ~npcs ~viewing_player_id ~view_width ~view_height ~messages
   =
   let viewing_player =
     List.find players ~f:(fun player ->
@@ -121,5 +148,5 @@ let build_world_view ~players ~walls ~viewing_player_id ~view_width ~view_height
         ~max_radius:default_visibility_radius
   in
   World_view.
-    { players; walls; center_pos; view_width; view_height; visible_positions; messages }
+    { players; walls; npcs; center_pos; view_width; view_height; visible_positions; messages }
 ;;

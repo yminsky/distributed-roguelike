@@ -132,6 +132,7 @@ let handle_state_rpc server_state connection_state connection =
       { your_id
       ; all_players = Game_state.get_players server_state.Server_state.game_state
       ; walls = Game_state.get_walls server_state.Server_state.game_state
+      ; npcs = Game_state.get_npcs server_state.Server_state.game_state
       }
   in
   let reader, writer = Pipe.create () in

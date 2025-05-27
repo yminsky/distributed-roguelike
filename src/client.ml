@@ -10,6 +10,7 @@ type game_client =
   ; mutable your_id : Player_id.t
   ; mutable all_players : Player.t list
   ; mutable walls : Position.t list
+  ; mutable npcs : Npc.t list
   ; mutable messages : string list
   ; term : Notty_async.Term.t
   ; log : Async_log_kernel.Log.t
@@ -139,6 +140,7 @@ let render_loop client =
       Display.build_world_view
         ~players:client.all_players
         ~walls:client.walls
+        ~npcs:client.npcs
         ~viewing_player_id:client.your_id
         ~view_width
         ~view_height
@@ -192,6 +194,7 @@ let connect_to_server ~log ~host ~port ~player_name =
       ; your_id = initial_state.your_id
       ; all_players = initial_state.all_players
       ; walls = initial_state.walls
+      ; npcs = initial_state.npcs
       ; messages = [ "Welcome to the game!" ]
       ; term
       ; log
