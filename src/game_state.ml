@@ -13,10 +13,10 @@ type t =
   { players : Player.t Player_id.Map.t
   ; max_players : int
   ; walls : Position.t list
+  ; maze_config : Maze_config.t  (* Store config to know maze type *)
   }
 
 let default_max_players = 10
-let max_spawn_search_radius = 20
 
 let create_test_maze_walls () =
   (* Create a simple test maze with a central room and corridors
@@ -50,7 +50,7 @@ let create ?(maze_config = Maze_config.No_maze) () =
     | Generated_dungeon (config, seed) ->
       Dungeon_generation.generate ~config ~seed |> Set.to_list
   in
-  { players = Player_id.Map.empty; max_players = default_max_players; walls }
+  { players = Player_id.Map.empty; max_players = default_max_players; walls; maze_config }
 ;;
 
 let player_sigils = [| '@'; '#'; '$'; '%'; '&'; '*'; '+'; '='; '?'; '!' |]
@@ -64,28 +64,75 @@ let next_available_sigil t =
 
 let find_spawn_position t =
   let occupied_positions = Map.data t.players |> List.map ~f:(fun p -> p.position) in
-  let wall_positions = t.walls in
-  (* Generate positions in a spiral around origin *)
-  let positions_at_radius radius =
-    let range = List.range (-radius) (radius + 1) in
-    List.concat_map range ~f:(fun dx ->
-      List.filter_map range ~f:(fun dy ->
-        if abs dx = radius || abs dy = radius then Some { x = dx; y = dy } else None))
-  in
-  (* Try positions in a spiral around origin *)
-  let rec try_positions radius =
-    if radius > max_spawn_search_radius
-    then failwith "Cannot find spawn position"
-    else (
-      match
-        List.find (positions_at_radius radius) ~f:(fun pos ->
-          (not (List.exists occupied_positions ~f:(Position.equal pos)))
-          && not (List.exists wall_positions ~f:(Position.equal pos)))
-      with
-      | Some pos -> pos
-      | None -> try_positions (radius + 1))
-  in
-  try_positions 0
+  let wall_set = Set.of_list (module Position) t.walls in
+  
+  match t.maze_config with
+  | No_maze ->
+    (* For no maze, start from origin and spiral outward *)
+    let rec find_position radius =
+      if radius > 50 then failwith "No spawn position found"
+      else
+        let positions = 
+          List.concat_map (List.range (-radius) (radius + 1)) ~f:(fun dx ->
+            List.filter_map (List.range (-radius) (radius + 1)) ~f:(fun dy ->
+              if abs dx = radius || abs dy = radius 
+              then Some { x = dx; y = dy }
+              else None))
+        in
+        match List.find positions ~f:(fun pos ->
+          not (List.mem occupied_positions pos ~equal:Position.equal))
+        with
+        | Some pos -> pos
+        | None -> find_position (radius + 1)
+    in
+    find_position 0
+    
+  | Test_maze ->
+    (* For test maze, we know the valid positions *)
+    let valid_positions = [
+      { x = 0; y = 0 };
+      { x = -1; y = 0 }; { x = 1; y = 0 };
+      { x = 0; y = -1 }; { x = 0; y = 1 };
+      { x = -1; y = -1 }; { x = 1; y = -1 };
+      { x = -1; y = 1 }; { x = 1; y = 1 };
+      { x = -2; y = 0 }; { x = 2; y = 0 };
+      { x = 0; y = -2 }; { x = 0; y = 2 };
+      { x = -2; y = -1 }; { x = -2; y = 1 };
+      { x = 2; y = -1 }; { x = 2; y = 1 };
+      { x = -1; y = -2 }; { x = 1; y = -2 };
+      { x = -1; y = 2 }; { x = 1; y = 2 };
+      { x = -2; y = -2 }; { x = 2; y = -2 };
+      { x = -2; y = 2 }; { x = 2; y = 2 };
+    ] in
+    (match List.find valid_positions ~f:(fun pos ->
+      not (List.mem occupied_positions pos ~equal:Position.equal))
+    with
+    | Some pos -> pos
+    | None -> failwith "Test maze full")
+    
+  | Generated_maze _ | Generated_dungeon _ ->
+    (* For generated mazes, scan systematically from center outward *)
+    let max_radius = 100 in
+    let rec scan_positions radius =
+      if radius > max_radius then failwith "No spawn position found in generated maze"
+      else
+        (* Generate positions at this radius *)
+        let positions = 
+          List.concat_map (List.range (-radius) (radius + 1)) ~f:(fun x ->
+            List.concat_map (List.range (-radius) (radius + 1)) ~f:(fun y ->
+              if abs x = radius || abs y = radius
+              then [{ x; y }]
+              else []))
+        in
+        (* Find first valid position *)
+        match List.find positions ~f:(fun pos ->
+          not (Set.mem wall_set pos) &&
+          not (List.mem occupied_positions pos ~equal:Position.equal))
+        with
+        | Some pos -> pos
+        | None -> scan_positions (radius + 1)
+    in
+    scan_positions 0
 ;;
 
 let add_player t ~player_id ~player_name =
@@ -142,6 +189,5 @@ let key_to_action : Key_input.t -> Direction.t option = function
   | Arrow Down -> Some Down
   | Arrow Left -> Some Left
   | Arrow Right -> Some Right
-  | ASCII 'q' | ASCII 'Q' -> None (* quit *)
-  | ASCII _ -> None
+  | _ -> None
 ;;

@@ -85,8 +85,7 @@ let test_client_server_with_pipe_transport () =
 
 let%expect_test "client-server communication via pipe transport" =
   let%bind () = test_client_server_with_pipe_transport () in
-  [%expect
-    {|
+  [%expect {|
     "RPC connection established"
     ("Player joined"(player_name TestPlayer)(player_id 1))
     Join successful
@@ -116,8 +115,7 @@ let%expect_test "server handles client join directly" =
       | Some id -> printf "Player ID set to: %s\n" (Player_id.to_string id)
       | None -> printf "Error: Player ID not set\n")
    | Error msg -> printf "Join failed: %s\n" msg);
-  [%expect
-    {|
+  [%expect {|
     ("Player joined"(player_name Alice)(player_id 1))
     Join successful
     Player ID set to: 1
