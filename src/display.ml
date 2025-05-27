@@ -36,7 +36,7 @@ let render_grid (world_view : World_view.t) =
   in
   (* Create position -> npc lookup *)
   let npc_map =
-    List.fold npcs ~init:[] ~f:(fun acc npc -> (npc.position, npc) :: acc)
+    List.fold npcs ~init:[] ~f:(fun acc npc -> (Npc.position npc, npc) :: acc)
   in
   (* Create a set of wall positions for efficient lookup *)
   let wall_set = Set.of_list (module Position) walls in
@@ -54,7 +54,7 @@ let render_grid (world_view : World_view.t) =
         | Some player -> player.sigil, A.(fg lightgreen)
         | None ->
           (match List.Assoc.find npc_map world_pos ~equal:Position.equal with
-           | Some npc -> npc.sigil, A.(fg lightred)
+           | Some npc -> Npc.sigil npc, A.(fg lightred)
            | None ->
              if Set.mem wall_set world_pos
              then '#', A.(fg white) (* Wall character *)
@@ -127,7 +127,14 @@ let render_ui (world_view : World_view.t) =
 
 let default_visibility_radius = 25
 
-let build_world_view ~players ~walls ~npcs ~viewing_player_id ~view_width ~view_height ~messages
+let build_world_view
+  ~players
+  ~walls
+  ~npcs
+  ~viewing_player_id
+  ~view_width
+  ~view_height
+  ~messages
   =
   let viewing_player =
     List.find players ~f:(fun player ->
@@ -148,5 +155,13 @@ let build_world_view ~players ~walls ~npcs ~viewing_player_id ~view_width ~view_
         ~max_radius:default_visibility_radius
   in
   World_view.
-    { players; walls; npcs; center_pos; view_width; view_height; visible_positions; messages }
+    { players
+    ; walls
+    ; npcs
+    ; center_pos
+    ; view_width
+    ; view_height
+    ; visible_positions
+    ; messages
+    }
 ;;

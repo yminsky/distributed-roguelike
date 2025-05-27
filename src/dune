@@ -2,5 +2,6 @@
  (public_name claude-code-2025-05)
  (name lan_rogue)
  (libraries core async notty notty_async)
+ (modules_without_implementation npc)
  (preprocess
   (pps ppx_jane)))

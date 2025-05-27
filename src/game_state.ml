@@ -53,8 +53,15 @@ let create ?(maze_config = Maze_config.No_maze) () =
   in
   let npcs =
     (* Create a test NPC for now *)
-    let test_npc = Npc.create ~id:"goblin1" ~position:{ x = 5; y = 5 } ~name:"Goblin" ~sigil:'g' ~hit_points:3 in
-    String.Map.of_alist_exn [ test_npc.id, test_npc ]
+    let test_npc =
+      Npc.create
+        ~id:(Npc.Id.of_string "goblin1")
+        ~position:{ x = 5; y = 5 }
+        ~name:"Goblin"
+        ~sigil:'g'
+        ~hit_points:3
+    in
+    String.Map.of_alist_exn [ Npc.id test_npc |> Npc.Id.to_string, test_npc ]
   in
   { players = Player_id.Map.empty; npcs; max_players = default_max_players; walls }
 ;;
@@ -70,7 +77,7 @@ let next_available_sigil t =
 
 let find_spawn_position t =
   let occupied_positions = Map.data t.players |> List.map ~f:(fun p -> p.position) in
-  let npc_positions = Map.data t.npcs |> List.map ~f:(fun npc -> npc.position) in
+  let npc_positions = Map.data t.npcs |> List.map ~f:(fun npc -> Npc.position npc) in
   let wall_positions = t.walls in
   (* Generate positions in a spiral around origin *)
   let positions_at_radius radius =
@@ -87,7 +94,7 @@ let find_spawn_position t =
       match
         List.find (positions_at_radius radius) ~f:(fun pos ->
           (not (List.exists occupied_positions ~f:(Position.equal pos)))
-          && not (List.exists npc_positions ~f:(Position.equal pos))
+          && (not (List.exists npc_positions ~f:(Position.equal pos)))
           && not (List.exists wall_positions ~f:(Position.equal pos)))
       with
       | Some pos -> pos
@@ -131,15 +138,19 @@ let move_player t ~player_id ~(direction : Direction.t) =
       then Error "Cannot move into another player"
       else (
         (* Check for collisions with NPCs *)
-        match Map.data t.npcs |> List.find ~f:(fun npc ->
-          Position.equal npc.position new_pos) with
+        match
+          Map.data t.npcs
+          |> List.find ~f:(fun npc -> Position.equal (Npc.position npc) new_pos)
+        with
         | Some npc ->
           (* Hit the NPC *)
-          Error (sprintf "You bump into the %s!" npc.name)
+          Error (sprintf "You bump into the %s!" (Npc.name npc))
         | None ->
           let updated_player = { player with position = new_pos } in
           let players = Map.set t.players ~key:player_id ~data:updated_player in
-          let update = Protocol.Update.Player_moved { player_id; new_position = new_pos } in
+          let update =
+            Protocol.Update.Player_moved { player_id; new_position = new_pos }
+          in
           Ok ({ t with players }, update)))
 ;;
 
